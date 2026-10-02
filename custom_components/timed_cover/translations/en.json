@@ -1,0 +1,89 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Choose the cover",
+        "description": "Choose the real cover to wrap (for example the Overkiz cover). The new cover is placed under the same device.",
+        "data": {
+          "source_entity": "Real cover to wrap"
+        },
+        "data_description": {
+          "source_entity": "The cover entity that receives the commands."
+        }
+      },
+      "parametres": {
+        "title": "Cover settings",
+        "description": "Real cover: {source}. Time a complete trip of the cover, fully closed to fully open and back.",
+        "data": {
+          "name": "Cover name",
+          "travel_time_up": "Time to open",
+          "travel_time_down": "Time to close",
+          "send_stop_at_ends": "Send \"stop\" at the ends",
+          "device_class": "Cover type",
+          "hide_source": "Hide the original cover"
+        },
+        "data_description": {
+          "name": "The name shown in Home Assistant.",
+          "travel_time_up": "Seconds needed for a complete opening.",
+          "travel_time_down": "Seconds needed for a complete closing.",
+          "send_stop_at_ends": "After a complete opening or closing, still send a stop command. Only useful if the cover does not stop by itself.",
+          "device_class": "The type of equipment.",
+          "hide_source": "The original cover no longer appears in the interface so it is not used by mistake. It is still used internally to send commands. It is shown again if this timed cover is removed."
+        }
+      }
+    },
+    "error": {
+      "source_introuvable": "This cover cannot be found.",
+      "source_deja_chronometree": "This cover is already a timed cover: choose the real cover."
+    },
+    "abort": {
+      "already_configured": "This cover is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Cover settings",
+        "description": "Changes apply immediately. The current position is kept.",
+        "data": {
+          "travel_time_up": "Time to open",
+          "travel_time_down": "Time to close",
+          "send_stop_at_ends": "Send \"stop\" at the ends",
+          "device_class": "Cover type",
+          "hide_source": "Hide the original cover"
+        },
+        "data_description": {
+          "travel_time_up": "Seconds needed for a complete opening.",
+          "travel_time_down": "Seconds needed for a complete closing.",
+          "send_stop_at_ends": "After a complete opening or closing, still send a stop command.",
+          "device_class": "The type of equipment.",
+          "hide_source": "The original cover no longer appears in the interface so it is not used by mistake. It is still used internally to send commands. It is shown again if this timed cover is removed."
+        }
+      }
+    }
+  },
+  "selector": {
+    "device_class": {
+      "options": {
+        "shutter": "Shutter",
+        "blind": "Blind",
+        "awning": "Awning",
+        "curtain": "Curtain",
+        "shade": "Shade",
+        "window": "Window"
+      }
+    }
+  },
+  "services": {
+    "set_known_position": {
+      "name": "Set known position",
+      "description": "Tell the real position of the cover without moving it.",
+      "fields": {
+        "position": {
+          "name": "Position",
+          "description": "Real position, 0 (closed) to 100 (open)."
+        }
+      }
+    }
+  }
+}
