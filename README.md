@@ -1,14 +1,15 @@
-# Volets à temps de trajet (`timed_cover`)
+# Custom Cover Position (`timed_cover`)
 
-Intégration Home Assistant qui **estime la position d'un volet roulant** à partir de son temps de montée
-et de son temps de descente, pour les volets qui ne renvoient pas leur position (par exemple les volets
-Somfy RTS pilotés par Overkiz).
+Intégration Home Assistant qui **estime l'état et la position d'un ouvrant** (volet, store, porte…)
+à partir de son temps d'ouverture et de son temps de fermeture complets, pour les ouvrants qui ne
+renvoient pas leur position (par exemple les volets Somfy RTS pilotés par Overkiz).
 
-Le nouveau volet **se range sous l'appareil existant** du volet : un seul appareil par volet, pas de
-doublon, et l'entité d'origine peut être masquée pour ne pas être utilisée par erreur.
+Le nouvel ouvrant **se range sous l'appareil existant** : un seul appareil par ouvrant, pas de doublon.
+Il peut aussi **reprendre le nom et l'identifiant de l'ouvrant d'origine** : les scripts et
+automatisations existants l'utilisent alors sans modification.
 
-> **État : version 0.1.0, en développement.** Testée dans une instance Home Assistant 2026.9.4 de test avec
-> de faux volets ; pas encore utilisée en production.
+> **État : version 0.2.0, en développement.** Testée dans une instance Home Assistant 2026.9.4 de test avec
+> de faux ouvrants ; pas encore utilisée en production.
 
 ## Ce que l'on obtient
 
@@ -16,30 +17,32 @@ doublon, et l'entité d'origine peut être masquée pour ne pas être utilisée 
 | --- | --- |
 | État | Ouvert, fermé, ouverture en cours, fermeture en cours, indisponible. |
 | Position | Pourcentage estimé de 0 (fermé) à 100 (ouvert). |
-| Disponibilité | Le volet est indisponible quand le volet d'origine l'est (l'état « inconnu » reste disponible : les volets RTS n'ont pas de retour d'état). |
+| Disponibilité | L'ouvrant est indisponible quand l'ouvrant d'origine l'est (l'état « inconnu » reste disponible : les volets RTS n'ont pas de retour d'état). |
 | Attributs | `travel_time_up`, `travel_time_down` (secondes), `source_entity`, `target_position` pendant un déplacement. |
-| Service | `timed_cover.set_known_position` : recale la position estimée sans faire bouger le volet. |
+| Service | `timed_cover.set_known_position` : recale la position estimée sans faire bouger l'ouvrant. |
 
 ## Installation (manuelle)
 
 1. Copier le dossier `custom_components/timed_cover` dans le dossier `custom_components` de Home Assistant.
 2. Redémarrer Home Assistant.
-3. Créer un volet : **Paramètres → Appareils et services**, onglet **Entrées**, **Créer une entrée**,
-   puis **Volets à temps de trajet**. (Chemin à confirmer dans l'interface.)
+3. Créer un ouvrant : **Paramètres → Appareils et services**, carte **Custom Cover Position**,
+   bouton **Ajouter un ouvrant** (la première fois : **Ajouter une intégration**, puis chercher « Custom Cover Position »).
 
 ## Réglages
 
-Les réglages sont affichés et expliqués dans l'interface, en français. Ils se modifient avec le bouton
-**Configurer** de l'entrée ; la position actuelle du volet est conservée.
+Les réglages sont affichés et expliqués dans l'interface (français et anglais). Ils se modifient avec la
+roue dentée de l'ouvrant ; la position actuelle est conservée.
 
 | Réglage | Rôle |
 | --- | --- |
-| Volet réel à enrober | Le volet qui reçoit les ordres (par exemple `cover.volet_salon_1_overkiz`). |
-| Nom du volet | Nom affiché ; l'identifiant en est déduit (`Volet Salon 1` donne `cover.volet_salon_1`). |
-| Temps de montée / de descente | Durée en secondes d'un trajet complet. |
+| Ouvrant réel à enrober | L'ouvrant qui reçoit les ordres (par exemple `cover.volet_salon_1_overkiz`). |
+| Nom de l'ouvrant | Nom affiché ; l'identifiant en est déduit (`Volet Salon 1` donne `cover.volet_salon_1`). |
+| Temps d'ouverture / de fermeture | Durée en secondes d'un trajet complet. |
 | Envoyer « stop » aux extrémités | Envoie un ordre d'arrêt même après une ouverture ou une fermeture complète. Laisser désactivé sauf besoin. |
-| Type de volet | Volet roulant, store, store banne, rideau, voilage ou fenêtre. |
-| Masquer le volet d'origine | Le volet d'origine n'apparaît plus dans l'interface ; il est ré-affiché si le volet à temps de trajet est supprimé. |
+| Classe d'appareil | Les types de Home Assistant : volet, store, store vénitien, auvent, rideau, porte, portail, garage, clapet, fenêtre. |
+| Masquer l'ouvrant d'origine | L'original disparaît des écrans automatiques (il reste dans les listes de choix des scripts) ; il réapparaît si l'ouvrant est supprimé. |
+| Reprendre le nom et l'identifiant de l'ouvrant d'origine | Activé par défaut. Seulement à la création, et seulement si le nom saisi donne l'identifiant de l'original : l'original est renommé avec le suffixe choisi (`cover.volet_cuisine_origine`), le nouvel ouvrant prend `cover.volet_cuisine`. À la suppression, tout est remis. Désactivé : le nouvel ouvrant reçoit un autre identifiant (`cover.volet_cuisine_2`). |
+| Suffixe de l'ouvrant d'origine | Ajouté au nom et à l'identifiant de l'original quand il est renommé (« origine » en français, « source » sinon). |
 
 ## Comment ça marche
 

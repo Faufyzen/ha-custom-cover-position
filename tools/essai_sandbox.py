@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Essais de l'intégration timed_cover dans la VM ha-sandbox, par l'API de Home Assistant.
+"""Essais de l'intégration timed_cover (Custom Cover Position) dans la VM ha-sandbox, par l'API de Home Assistant.
 
 Le script crée des volets à temps de trajet autour des faux volets de l'intégration
 `demo`, les actionne et vérifie les positions et les appareils. Il ne touche à rien
@@ -72,8 +72,8 @@ def verifier(nom: str, condition: bool, detail: str = "") -> None:
     print(f"  [{'OK ' if condition else 'ÉCHEC'}] {nom}" + (f" — {detail}" if detail else ""))
 
 
-def creer_volet(cle: str, source: str) -> str:
-    """Crée un volet à temps de trajet par les étapes de configuration ; renvoie son entry_id."""
+def creer_volet(cle: str, source: str, nom: str | None = None, **reglages) -> str:
+    """Crée un ouvrant à position estimée par les étapes de configuration ; renvoie son entry_id."""
     flux = api("POST", "/api/config/config_entries/flow", {"handler": "timed_cover"})
     flux = api("POST", f"/api/config/config_entries/flow/{flux['flow_id']}", {"source_entity": source})
     assert flux["step_id"] == "parametres", flux
@@ -81,12 +81,15 @@ def creer_volet(cle: str, source: str) -> str:
         "POST",
         f"/api/config/config_entries/flow/{flux['flow_id']}",
         {
-            "name": f"Essai {cle}",
+            "name": nom or f"Essai {cle}",
             "travel_time_up": TEMPS_MONTEE,
             "travel_time_down": TEMPS_DESCENTE,
             "send_stop_at_ends": False,
             "device_class": "shutter",
             "hide_source": True,
+            "take_over": True,
+            "source_suffix": "origine",
+            **reglages,
         },
     )
     assert flux["type"] == "create_entry", flux
@@ -109,6 +112,14 @@ def attendre_etat(entity_id: str, attendu: str, delai: float) -> float:
 
 def position(entity_id: str) -> int | None:
     return etat(entity_id)["attributes"].get("current_position")
+
+
+def existe(entity_id: str) -> bool:
+    try:
+        etat(entity_id)
+        return True
+    except RuntimeError:
+        return False
 
 
 def nettoyer() -> None:
@@ -258,6 +269,40 @@ def main() -> int:
         for cle, source in SOURCES.items():
             masque = modele(f"{{{{ is_hidden_entity('{source}') }}}}")
             verifier(f"{source} de nouveau visible après suppression", masque == "False", masque)
+
+    print("\n12. Échange des noms : l'ouvrant « Hall Window » reprend l'identifiant de cover.hall_window")
+    nettoyer()
+    time.sleep(2)
+    source = "cover.hall_window"
+    creer_volet("couloir", source, nom="Hall Window")
+    time.sleep(2.5)
+    origine = "cover.hall_window_origine"
+    nouveau = etat(source)
+    verifier("l'identifiant d'origine est repris par le nouvel ouvrant", nouveau["attributes"].get("travel_time_up") == TEMPS_MONTEE, str(nouveau["attributes"].get("travel_time_up")))
+    verifier("le nouvel ouvrant pointe vers l'ouvrant d'origine renommé", nouveau["attributes"].get("source_entity") == origine, str(nouveau["attributes"].get("source_entity")))
+    verifier("nom du nouvel ouvrant = « Hall Window »", nouveau["attributes"].get("friendly_name") == "Hall Window", str(nouveau["attributes"].get("friendly_name")))
+    verifier("l'ouvrant d'origine existe sous son nouvel identifiant", existe(origine))
+    if existe(origine):
+        verifier("nom de l'ouvrant d'origine = « Hall Window (origine) »", etat(origine)["attributes"].get("friendly_name") == "Hall Window (origine)", str(etat(origine)["attributes"].get("friendly_name")))
+        verifier("l'ouvrant d'origine est masqué", modele(f"{{{{ is_hidden_entity('{origine}') }}}}") == "True")
+        service("timed_cover", "set_known_position", entity_id=source, position=100)
+        service("cover", "close_cover", entity_id=source)
+        time.sleep(1.0)
+        verifier("un ordre au nouvel ouvrant atteint bien l'ouvrant d'origine", etat(origine)["state"] in ("closing", "closed"), etat(origine)["state"])
+    nettoyer()
+    time.sleep(2.5)
+    verifier("à la suppression, l'identifiant d'origine est rendu à l'ouvrant d'origine", existe(source) and "travel_time_up" not in etat(source)["attributes"], str(existe(source)))
+    verifier("à la suppression, le nom d'origine est remis", existe(source) and etat(source)["attributes"].get("friendly_name") == "Hall Window", str(etat(source)["attributes"].get("friendly_name")) if existe(source) else "absent")
+    verifier("à la suppression, l'identifiant temporaire disparaît", not existe(origine))
+    verifier("à la suppression, l'ouvrant d'origine est de nouveau visible", modele(f"{{{{ is_hidden_entity('{source}') }}}}") == "False")
+
+    print("\n13. Sans échange des noms : le nouvel ouvrant reçoit un identifiant différent")
+    creer_volet("couloir", source, nom="Hall Window", take_over=False)
+    time.sleep(2.5)
+    verifier("le nouvel ouvrant devient cover.hall_window_2", existe("cover.hall_window_2"))
+    verifier("l'ouvrant d'origine garde son identifiant et son nom", existe(source) and etat(source)["attributes"].get("friendly_name") == "Hall Window" and "travel_time_up" not in etat(source)["attributes"])
+    nettoyer()
+    time.sleep(2.0)
 
     echecs = [r for r in resultats if not r[1]]
     print(f"\nRésultat : {len(resultats) - len(echecs)}/{len(resultats)} vérifications réussies.")

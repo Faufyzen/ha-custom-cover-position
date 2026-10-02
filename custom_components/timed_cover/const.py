@@ -1,4 +1,4 @@
-"""Constantes de l'intégration « Volets à temps de trajet »."""
+"""Constantes de l'intégration « Custom Cover Position » (timed_cover)."""
 
 DOMAIN = "timed_cover"
 
@@ -10,15 +10,33 @@ CONF_TRAVEL_TIME_DOWN = "travel_time_down"
 CONF_SEND_STOP_AT_ENDS = "send_stop_at_ends"
 CONF_DEVICE_CLASS = "device_class"
 CONF_HIDE_SOURCE = "hide_source"
+CONF_SOURCE_ID = "source_id"  # identifiant interne de l'ouvrant d'origine (survit à un renommage)
+CONF_TAKE_OVER = "take_over"  # reprendre le nom et l'identifiant de l'ouvrant d'origine
+CONF_SOURCE_SUFFIX = "source_suffix"  # suffixe donné à l'ouvrant d'origine une fois renommé
+CONF_RESTORE = "restore"  # ce qu'il faut remettre en état à la suppression (voir __init__.py)
 
 # Valeurs proposées par défaut.
 DEFAULT_TRAVEL_TIME = 30.0
 DEFAULT_SEND_STOP_AT_ENDS = False
 DEFAULT_DEVICE_CLASS = "shutter"
 DEFAULT_HIDE_SOURCE = True
+DEFAULT_TAKE_OVER = True
+DEFAULT_SUFFIX = {"fr": "origine"}  # langue -> suffixe proposé
+DEFAULT_SUFFIX_OTHER = "source"
 
-# Types de volets proposés (classes d'appareil de Home Assistant).
-DEVICE_CLASSES = ["shutter", "blind", "awning", "curtain", "shade", "window"]
+# Classes d'appareil d'un ouvrant (toutes celles de Home Assistant).
+DEVICE_CLASSES = [
+    "awning",
+    "blind",
+    "curtain",
+    "damper",
+    "door",
+    "garage",
+    "gate",
+    "shade",
+    "shutter",
+    "window",
+]
 
 # Attributs exposés par l'entité.
 ATTR_SOURCE_ENTITY = "source_entity"

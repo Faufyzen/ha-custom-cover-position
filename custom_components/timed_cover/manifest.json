@@ -1,12 +1,14 @@
 {
   "domain": "timed_cover",
-  "name": "Volets à temps de trajet",
-  "codeowners": ["@Faufyzen"],
+  "name": "Custom Cover Position",
+  "codeowners": [
+    "@Faufyzen"
+  ],
   "config_flow": true,
-  "documentation": "https://github.com/Faufyzen/ha-cover-time-based",
-  "integration_type": "helper",
+  "documentation": "https://github.com/Faufyzen/ha-custom-cover-position",
+  "integration_type": "device",
   "iot_class": "calculated",
-  "issue_tracker": "https://github.com/Faufyzen/ha-cover-time-based/issues",
+  "issue_tracker": "https://github.com/Faufyzen/ha-custom-cover-position/issues",
   "requirements": [],
-  "version": "0.1.0"
+  "version": "0.2.0"
 }

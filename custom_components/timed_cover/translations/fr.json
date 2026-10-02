@@ -1,63 +1,71 @@
 {
   "config": {
+    "initiate_flow": {
+      "user": "Ajouter un ouvrant"
+    },
     "step": {
       "user": {
-        "title": "Choisir le volet",
-        "description": "Choisissez le volet réel à enrober (par exemple le volet Overkiz). Le nouveau volet se rangera sous le même appareil. Ensuite, n'utilisez plus le volet d'origine : c'est lui qui ne connaît pas sa position.",
+        "title": "Choisir l'ouvrant",
+        "description": "Choisissez l'ouvrant réel à enrober (par exemple un volet Overkiz). Le nouvel ouvrant se rangera sous le même appareil et ajoutera une position estimée.",
         "data": {
-          "source_entity": "Volet réel à enrober"
+          "source_entity": "Ouvrant réel à enrober"
         },
         "data_description": {
-          "source_entity": "L'entité volet qui reçoit les ordres (par exemple cover.volet_salon_1_overkiz)."
+          "source_entity": "L'entité ouvrant qui reçoit les ordres."
         }
       },
       "parametres": {
-        "title": "Réglages du volet",
-        "description": "Volet réel : {source}. Chronométrez un trajet complet du volet, de la fermeture totale à l'ouverture totale, et inversement.",
+        "title": "Réglages de l'ouvrant",
+        "description": "Ouvrant réel : {source}. Chronométrez un trajet complet, de la fermeture totale à l'ouverture totale, et inversement.",
         "data": {
-          "name": "Nom du volet",
-          "travel_time_up": "Temps de montée",
-          "travel_time_down": "Temps de descente",
+          "name": "Nom de l'ouvrant",
+          "travel_time_up": "Temps d'ouverture",
+          "travel_time_down": "Temps de fermeture",
           "send_stop_at_ends": "Envoyer « stop » aux extrémités",
-          "device_class": "Type de volet",
-          "hide_source": "Masquer le volet d'origine"
+          "device_class": "Classe d'appareil",
+          "hide_source": "Masquer l'ouvrant d'origine",
+          "take_over": "Reprendre le nom et l'identifiant de l'ouvrant d'origine",
+          "source_suffix": "Suffixe de l'ouvrant d'origine"
         },
         "data_description": {
-          "name": "Le nom affiché dans Home Assistant (par exemple « Volet Salon 1 »).",
-          "travel_time_up": "Durée, en secondes, d'une ouverture complète (de fermé à ouvert).",
-          "travel_time_down": "Durée, en secondes, d'une fermeture complète (d'ouvert à fermé).",
-          "send_stop_at_ends": "Après une ouverture ou une fermeture complète, envoie quand même un ordre d'arrêt. Utile seulement si le volet ne s'arrête pas tout seul en fin de course. En cas de doute, laissez désactivé.",
-          "device_class": "Le type d'équipement, qui détermine l'icône et le vocabulaire affichés.",
-          "hide_source": "Le volet d'origine (Overkiz) n'apparaît plus dans l'interface, pour ne pas être utilisé par erreur. Il reste utilisé en interne pour envoyer les ordres. Il est ré-affiché si vous supprimez ce volet à temps de trajet."
+          "name": "Le nom affiché dans Home Assistant. Gardez le nom de l'ouvrant d'origine pour reprendre son identifiant (voir plus bas).",
+          "travel_time_up": "Durée, en secondes, d'une ouverture complète (de 0 à 100 %).",
+          "travel_time_down": "Durée, en secondes, d'une fermeture complète (de 100 à 0 %).",
+          "send_stop_at_ends": "Après une ouverture ou une fermeture complète, envoie quand même un ordre d'arrêt. Utile seulement si l'ouvrant ne s'arrête pas tout seul en fin de course. En cas de doute, laissez désactivé.",
+          "device_class": "Le type d'équipement (volet, store, porte…). Il détermine l'icône.",
+          "hide_source": "L'ouvrant d'origine n'apparaît plus dans les écrans automatiques de Home Assistant. Il reste utilisé en interne pour envoyer les ordres, et il réapparaît si vous supprimez cet ouvrant.",
+          "take_over": "Activé : le nouvel ouvrant prend le nom et l'identifiant de l'ouvrant d'origine (par exemple cover.volet_cuisine), et l'original est renommé avec le suffixe ci-dessous. Vos scripts et automatisations utilisent alors le nouvel ouvrant sans aucune modification. Désactivé : le nouvel ouvrant reçoit un identifiant différent (par exemple cover.volet_cuisine_2) et vos scripts devront être modifiés pour l'utiliser. L'échange n'a lieu que si le nom saisi ci-dessus est celui de l'ouvrant d'origine.",
+          "source_suffix": "Ajouté au nom et à l'identifiant de l'ouvrant d'origine quand il est renommé (par exemple « origine » donne « Volet Cuisine (origine) » et cover.volet_cuisine_origine). Sans effet si l'option ci-dessus est désactivée."
         }
       }
     },
     "error": {
-      "source_introuvable": "Ce volet est introuvable. Vérifiez qu'il est bien présent dans Home Assistant.",
-      "source_deja_chronometree": "Ce volet est déjà un volet à temps de trajet : choisissez le volet réel (par exemple celui d'Overkiz)."
+      "source_introuvable": "Cet ouvrant est introuvable. Vérifiez qu'il est bien présent dans Home Assistant.",
+      "source_deja_chronometree": "Cet ouvrant a déjà une position estimée : choisissez l'ouvrant réel (par exemple celui d'Overkiz).",
+      "suffixe_invalide": "Saisissez un suffixe composé de lettres ou de chiffres."
     },
     "abort": {
-      "already_configured": "Ce volet est déjà configuré."
+      "already_configured": "Cet ouvrant est déjà configuré."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Réglages du volet",
-        "description": "Les modifications s'appliquent tout de suite. La position actuelle du volet est conservée.",
+        "title": "Réglages de l'ouvrant",
+        "description": "Les modifications s'appliquent tout de suite. La position actuelle est conservée. Le nom et l'échange des noms ne se choisissent qu'à la création de l'ouvrant.",
         "data": {
-          "travel_time_up": "Temps de montée",
-          "travel_time_down": "Temps de descente",
+          "travel_time_up": "Temps d'ouverture",
+          "travel_time_down": "Temps de fermeture",
           "send_stop_at_ends": "Envoyer « stop » aux extrémités",
-          "device_class": "Type de volet",
-          "hide_source": "Masquer le volet d'origine"
+          "device_class": "Classe d'appareil",
+          "hide_source": "Masquer l'ouvrant d'origine"
         },
         "data_description": {
-          "travel_time_up": "Durée, en secondes, d'une ouverture complète (de fermé à ouvert).",
-          "travel_time_down": "Durée, en secondes, d'une fermeture complète (d'ouvert à fermé).",
-          "send_stop_at_ends": "Après une ouverture ou une fermeture complète, envoie quand même un ordre d'arrêt. Utile seulement si le volet ne s'arrête pas tout seul en fin de course. En cas de doute, laissez désactivé.",
-          "device_class": "Le type d'équipement, qui détermine l'icône et le vocabulaire affichés.",
-          "hide_source": "Le volet d'origine (Overkiz) n'apparaît plus dans l'interface, pour ne pas être utilisé par erreur. Il reste utilisé en interne pour envoyer les ordres. Il est ré-affiché si vous supprimez ce volet à temps de trajet."
+          "travel_time_up": "Durée, en secondes, d'une ouverture complète (de 0 à 100 %).",
+          "travel_time_down": "Durée, en secondes, d'une fermeture complète (de 100 à 0 %).",
+          "send_stop_at_ends": "Après une ouverture ou une fermeture complète, envoie quand même un ordre d'arrêt. Utile seulement si l'ouvrant ne s'arrête pas tout seul en fin de course. En cas de doute, laissez désactivé.",
+          "device_class": "Le type d'équipement (volet, store, porte…). Il détermine l'icône.",
+          "hide_source": "L'ouvrant d'origine n'apparaît plus dans les écrans automatiques de Home Assistant. Il reste utilisé en interne pour envoyer les ordres, et il réapparaît si vous supprimez cet ouvrant."
         }
       }
     }
@@ -65,11 +73,15 @@
   "selector": {
     "device_class": {
       "options": {
-        "shutter": "Volet roulant",
-        "blind": "Store",
-        "awning": "Store banne",
+        "awning": "Auvent",
+        "blind": "Store vénitien",
         "curtain": "Rideau",
-        "shade": "Voilage",
+        "damper": "Clapet",
+        "door": "Porte",
+        "garage": "Garage",
+        "gate": "Portail",
+        "shade": "Store",
+        "shutter": "Volet",
         "window": "Fenêtre"
       }
     }
@@ -77,11 +89,11 @@
   "services": {
     "set_known_position": {
       "name": "Recaler la position",
-      "description": "Indique la position réelle du volet, sans le faire bouger. Utile quand la position estimée a dérivé (par exemple après une commande faite à la télécommande).",
+      "description": "Indique la position réelle de l'ouvrant, sans le faire bouger. Utile quand la position estimée a dérivé (par exemple après une commande faite à la télécommande).",
       "fields": {
         "position": {
           "name": "Position",
-          "description": "Position réelle du volet, de 0 (fermé) à 100 (ouvert)."
+          "description": "Position réelle de l'ouvrant, de 0 (fermé) à 100 (ouvert)."
         }
       }
     }

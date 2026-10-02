@@ -1,9 +1,12 @@
 {
   "config": {
+    "initiate_flow": {
+      "user": "Add a cover"
+    },
     "step": {
       "user": {
         "title": "Choose the cover",
-        "description": "Choose the real cover to wrap (for example the Overkiz cover). The new cover is placed under the same device.",
+        "description": "Choose the real cover to wrap (for example an Overkiz shutter). The new cover is placed under the same device and adds an estimated position.",
         "data": {
           "source_entity": "Real cover to wrap"
         },
@@ -19,22 +22,27 @@
           "travel_time_up": "Time to open",
           "travel_time_down": "Time to close",
           "send_stop_at_ends": "Send \"stop\" at the ends",
-          "device_class": "Cover type",
-          "hide_source": "Hide the original cover"
+          "device_class": "Device class",
+          "hide_source": "Hide the original cover",
+          "take_over": "Take over the name and identifier of the original cover",
+          "source_suffix": "Suffix of the original cover"
         },
         "data_description": {
-          "name": "The name shown in Home Assistant.",
-          "travel_time_up": "Seconds needed for a complete opening.",
-          "travel_time_down": "Seconds needed for a complete closing.",
-          "send_stop_at_ends": "After a complete opening or closing, still send a stop command. Only useful if the cover does not stop by itself.",
-          "device_class": "The type of equipment.",
-          "hide_source": "The original cover no longer appears in the interface so it is not used by mistake. It is still used internally to send commands. It is shown again if this timed cover is removed."
+          "name": "The name shown in Home Assistant. Keep the name of the original cover to take over its identifier (see below).",
+          "travel_time_up": "Seconds needed for a complete opening (0 to 100 %).",
+          "travel_time_down": "Seconds needed for a complete closing (100 to 0 %).",
+          "send_stop_at_ends": "After a complete opening or closing, still send a stop command. Only useful if the cover does not stop by itself at the end of its travel. When in doubt, leave it off.",
+          "device_class": "The type of equipment (shutter, blind, door...). It determines the icon.",
+          "hide_source": "The original cover no longer appears in the automatic screens of Home Assistant. It is still used internally to send commands, and shown again if this cover is removed.",
+          "take_over": "On: the new cover takes the name and identifier of the original cover (for example cover.kitchen_shutter) and the original is renamed with the suffix below. Your scripts and automations then use the new cover without any change. Off: the new cover gets a different identifier (for example cover.kitchen_shutter_2) and your scripts must be edited to use it. The swap only happens if the name above is the name of the original cover.",
+          "source_suffix": "Added to the name and identifier of the original cover when it is renamed (for example \"source\" gives \"Kitchen Shutter (source)\" and cover.kitchen_shutter_source). No effect if the option above is off."
         }
       }
     },
     "error": {
       "source_introuvable": "This cover cannot be found.",
-      "source_deja_chronometree": "This cover is already a timed cover: choose the real cover."
+      "source_deja_chronometree": "This cover already has an estimated position: choose the real cover.",
+      "suffixe_invalide": "Enter a suffix made of letters or digits."
     },
     "abort": {
       "already_configured": "This cover is already configured."
@@ -44,20 +52,20 @@
     "step": {
       "init": {
         "title": "Cover settings",
-        "description": "Changes apply immediately. The current position is kept.",
+        "description": "Changes apply immediately. The current position is kept. The name and the swap of names can only be set when the cover is created.",
         "data": {
           "travel_time_up": "Time to open",
           "travel_time_down": "Time to close",
           "send_stop_at_ends": "Send \"stop\" at the ends",
-          "device_class": "Cover type",
+          "device_class": "Device class",
           "hide_source": "Hide the original cover"
         },
         "data_description": {
-          "travel_time_up": "Seconds needed for a complete opening.",
-          "travel_time_down": "Seconds needed for a complete closing.",
-          "send_stop_at_ends": "After a complete opening or closing, still send a stop command.",
-          "device_class": "The type of equipment.",
-          "hide_source": "The original cover no longer appears in the interface so it is not used by mistake. It is still used internally to send commands. It is shown again if this timed cover is removed."
+          "travel_time_up": "Seconds needed for a complete opening (0 to 100 %).",
+          "travel_time_down": "Seconds needed for a complete closing (100 to 0 %).",
+          "send_stop_at_ends": "After a complete opening or closing, still send a stop command. Only useful if the cover does not stop by itself at the end of its travel. When in doubt, leave it off.",
+          "device_class": "The type of equipment (shutter, blind, door...). It determines the icon.",
+          "hide_source": "The original cover no longer appears in the automatic screens of Home Assistant. It is still used internally to send commands, and shown again if this cover is removed."
         }
       }
     }
@@ -65,11 +73,15 @@
   "selector": {
     "device_class": {
       "options": {
-        "shutter": "Shutter",
-        "blind": "Blind",
         "awning": "Awning",
+        "blind": "Blind",
         "curtain": "Curtain",
+        "damper": "Damper",
+        "door": "Door",
+        "garage": "Garage",
+        "gate": "Gate",
         "shade": "Shade",
+        "shutter": "Shutter",
         "window": "Window"
       }
     }
@@ -77,7 +89,7 @@
   "services": {
     "set_known_position": {
       "name": "Set known position",
-      "description": "Tell the real position of the cover without moving it.",
+      "description": "Tell the real position of the cover without moving it. Useful when the estimated position has drifted (for example after using the remote control).",
       "fields": {
         "position": {
           "name": "Position",

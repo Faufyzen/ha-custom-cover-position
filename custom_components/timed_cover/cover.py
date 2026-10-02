@@ -1,6 +1,6 @@
-"""Entité volet à temps de trajet.
+"""Entité ouvrant à position estimée.
 
-Le volet réel (par exemple un volet Overkiz) ne connaît pas sa position : on lui
+L'ouvrant réel (par exemple un volet Overkiz) ne connaît pas sa position : on lui
 envoie des ordres « ouvrir », « fermer » et « arrêter », et on estime sa position
 d'après le temps écoulé (voir travel.py).
 
@@ -55,7 +55,6 @@ from .const import (
     CONF_DEVICE_CLASS,
     CONF_NAME,
     CONF_SEND_STOP_AT_ENDS,
-    CONF_SOURCE_ENTITY,
     CONF_TRAVEL_TIME_DOWN,
     CONF_TRAVEL_TIME_UP,
     DEFAULT_DEVICE_CLASS,
@@ -63,6 +62,7 @@ from .const import (
     DOMAIN,
     SERVICE_SET_KNOWN_POSITION,
 )
+from .source import id_source
 from .travel import POSITION_OUVERTE, Direction, TravelEstimator
 
 _LOGGER = logging.getLogger(__name__)
@@ -101,9 +101,9 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Ajoute le volet à temps de trajet d'une entrée de configuration."""
+    """Ajoute l'ouvrant à position estimée d'une entrée de configuration."""
     _preparer_registre(hass, entry)
-    async_add_entities([VoletTempsDeTrajet(hass, entry)])
+    async_add_entities([OuvrantPositionEstimee(hass, entry)])
 
     plateforme = entity_platform.async_get_current_platform()
     plateforme.async_register_entity_service(
@@ -141,8 +141,8 @@ def _preparer_registre(hass: HomeAssistant, entry: ConfigEntry) -> None:
     registre.async_update_entity(creee.entity_id, name=nom)
 
 
-class VoletTempsDeTrajet(CoverEntity, RestoreEntity):
-    """Volet dont la position est estimée à partir de ses temps de trajet."""
+class OuvrantPositionEstimee(CoverEntity, RestoreEntity):
+    """Ouvrant dont la position est estimée à partir de ses temps d'ouverture et de fermeture."""
 
     _attr_should_poll = False
     _attr_has_entity_name = False
@@ -159,7 +159,7 @@ class VoletTempsDeTrajet(CoverEntity, RestoreEntity):
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         """Prépare l'entité à partir de la configuration (options prioritaires)."""
         reglages = {**entry.data, **entry.options}
-        self._source: str = reglages[CONF_SOURCE_ENTITY]
+        self._entry = entry
         self._envoyer_stop_aux_extremites: bool = reglages.get(
             CONF_SEND_STOP_AT_ENDS, DEFAULT_SEND_STOP_AT_ENDS
         )
@@ -169,12 +169,19 @@ class VoletTempsDeTrajet(CoverEntity, RestoreEntity):
         self._verrou = asyncio.Lock()
         self._annuler_arret: Callable[[], None] | None = None
         self._annuler_rafraichissement: Callable[[], None] | None = None
+        self._annuler_suivi: Callable[[], None] | None = None
+        self._suivi_id: str | None = None
 
         self._attr_name = reglages[CONF_NAME]
         self._attr_unique_id = entry.entry_id
         self._attr_device_class = reglages.get(CONF_DEVICE_CLASS, DEFAULT_DEVICE_CLASS)
         # Rattachement à l'appareil du volet réel (modèle recommandé par Home Assistant).
-        self.device_entry = _appareil_de(hass, self._source)
+        self.device_entry = _appareil_de(hass, id_source(hass, entry))
+
+    @property
+    def _source(self) -> str:
+        """Identifiant actuel de l'ouvrant d'origine (suit un éventuel renommage)."""
+        return id_source(self.hass, self._entry)
 
     # -- Cycle de vie -----------------------------------------------------
 
@@ -189,19 +196,40 @@ class VoletTempsDeTrajet(CoverEntity, RestoreEntity):
                     self._estimateur.definir_position(float(position))
                 except (TypeError, ValueError):
                     _LOGGER.debug("Position restaurée illisible : %s", position)
+        self._suivre_source()
+        # Si l'ouvrant d'origine est renommé, on suit son nouvel identifiant.
         self.async_on_remove(
-            async_track_state_change_event(
-                self.hass, [self._source], self._source_a_change
+            self.hass.bus.async_listen(
+                er.EVENT_ENTITY_REGISTRY_UPDATED, self._registre_a_change
             )
         )
 
+    def _suivre_source(self) -> None:
+        """(Re)démarre la surveillance de l'état de l'ouvrant d'origine."""
+        if self._annuler_suivi is not None:
+            self._annuler_suivi()
+        self._suivi_id = self._source
+        self._annuler_suivi = async_track_state_change_event(
+            self.hass, [self._suivi_id], self._source_a_change
+        )
+
+    @callback
+    def _registre_a_change(self, event: Event) -> None:
+        """Le registre a changé : si c'est l'identifiant de l'ouvrant d'origine, on le suit."""
+        if event.data.get("old_entity_id") == self._suivi_id:
+            self._suivre_source()
+            self.async_write_ha_state()
+
     async def async_will_remove_from_hass(self) -> None:
-        """Arrête les minuteurs quand l'entité est retirée."""
+        """Arrête les minuteurs et la surveillance quand l'entité est retirée."""
         self._arreter_minuteurs()
+        if self._annuler_suivi is not None:
+            self._annuler_suivi()
+            self._annuler_suivi = None
 
     @callback
     def _source_a_change(self, _event: Event[EventStateChangedData]) -> None:
-        """Le volet réel a changé d'état : on met à jour la disponibilité."""
+        """L'ouvrant réel a changé d'état : on met à jour la disponibilité."""
         self.async_write_ha_state()
 
     # -- Informations -----------------------------------------------------
@@ -281,7 +309,7 @@ class VoletTempsDeTrajet(CoverEntity, RestoreEntity):
         """Envoie un ordre au volet réel et attend qu'il l'ait accepté."""
         if not self.available:
             raise HomeAssistantError(
-                f"Le volet « {self.name} » est indisponible : {self._source} ne répond pas."
+                f"L'ouvrant « {self.name} » est indisponible : {self._source} ne répond pas."
             )
         await self.hass.services.async_call(
             "cover", service, {"entity_id": self._source}, blocking=True
