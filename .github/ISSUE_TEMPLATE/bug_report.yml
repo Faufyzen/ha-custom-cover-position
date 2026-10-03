@@ -1,0 +1,34 @@
+name: Bug report / Signaler un bug
+description: Something does not work as expected / Quelque chose ne fonctionne pas comme prévu
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report this. / Merci de prendre le temps de le signaler.
+        You can write in English or in French. / Vous pouvez écrire en français ou en anglais.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened? / Que s'est-il passé ?
+      description: What you expected, and what you got instead. / Ce que vous attendiez, et ce qui s'est passé.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce / Étapes pour reproduire
+      description: What you did, step by step. / Ce que vous avez fait, étape par étape.
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics file / Fichier de diagnostic
+      description: |
+        Integrations page, Custom Cover Position, ⋮ menu of the entity, "Download diagnostics", then drag the file here.
+        Page de l'intégration Custom Cover Position, menu ⋮ de l'entité, « Télécharger les diagnostics », puis glissez le fichier ici.
+        The file contains no password or token. / Le fichier ne contient ni mot de passe ni jeton.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Debug logs (optional) / Journaux de débogage (facultatif)
+      description: Integration page, ⋮ menu at the top right, "Enable debug logging", reproduce the problem, then disable it and drag the downloaded file here.

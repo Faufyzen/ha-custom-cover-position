@@ -1,12 +1,12 @@
 {
   "config": {
     "initiate_flow": {
-      "user": "Add a cover"
+      "user": "Add a cover entity"
     },
     "step": {
       "user": {
-        "title": "Choose the cover",
-        "description": "Select the entity to link. The new cover will be placed under the same device and will show its current position.",
+        "title": "Choose the source entity",
+        "description": "Select the source entity to link. The custom cover entity will be placed under the same device and will show its current position.",
         "data": {
           "source_entity": "Select an entity"
         },
@@ -16,33 +16,33 @@
       },
       "parametres": {
         "title": "Cover settings",
-        "description": "Real cover: {source}. Time a complete trip of the cover, fully closed to fully open and back.",
+        "description": "Source entity: {source}. Time a complete trip of the cover, fully closed to fully open and back.",
         "data": {
-          "name": "Cover name",
+          "name": "Entity name",
           "travel_time_up": "Time to open",
           "travel_time_down": "Time to close",
           "send_stop_at_ends": "Send \"stop\" at the ends",
           "device_class": "Device class",
-          "hide_source": "Hide the original cover",
-          "take_over": "Take over the name and identifier of the original cover",
-          "source_suffix": "Suffix for the original cover",
-          "disable_other_entities": "Disable the other entities of the original device"
+          "hide_source": "Hide the source entity",
+          "take_over": "Take over the name and identifier of the source entity",
+          "source_suffix": "Suffix for the source entity",
+          "disable_other_entities": "Disable the other entities of the source device"
         },
         "data_description": {
-          "name": "The name shown in Home Assistant. Keep the name of the original cover to take over its identifier (see below).",
+          "name": "The name shown in Home Assistant. Keep the name of the source entity to take over its identifier (see below).",
           "travel_time_up": "Seconds needed for a complete opening (0 to 100 %).",
           "travel_time_down": "Seconds needed for a complete closing (100 to 0 %).",
           "send_stop_at_ends": "Once opening or closing is complete, still sends a stop command. This is only useful if the cover does not stop by itself at the end of its travel. When in doubt, don't use it.",
           "device_class": "The type of equipment (shutter, blind, door…). It determines the icon.",
-          "hide_source": "The original cover no longer appears in Home Assistant's automatic screens. It is still used internally to run the commands, and it appears again if you remove this entity.",
-          "take_over": "On: the new cover takes the name and identifier of the original one (for example cover.kitchen_shutter), and the original is renamed with the suffix below. Your scripts and automations then use the new cover without any change. Off: the new cover gets a different identifier (for example cover.kitchen_shutter_2) and your scripts must be edited to use it. The exchange only happens if the name entered above is the name of the original cover.",
-          "source_suffix": "Added to the name and identifier of the original cover when it is renamed (for example \"source\" gives \"Kitchen Shutter (source)\" and cover.kitchen_shutter_source). No effect if the option above is off.",
-          "disable_other_entities": "Disables all the other entities of the original device (for example Somfy's \"My Position\" or \"Identify\" buttons, which move the cover without going through this one and make it lose position tracking). The original cover stays enabled: it receives the commands. Careful: the device's sensors (battery, power…) are disabled too. Everything is enabled again if you untick the option or remove this cover."
+          "hide_source": "The source entity no longer appears in Home Assistant's automatic screens. It is still used internally to run the commands, and it appears again if you remove this entity.",
+          "take_over": "On: the custom cover entity takes the name and identifier of the source entity (for example cover.kitchen_shutter), and the source entity is renamed with the suffix below. Your scripts and automations then use the custom cover entity without any change. Off: the custom cover entity gets a different identifier (for example cover.kitchen_shutter_2) and your scripts must be edited to use it. The exchange only happens if the name entered above is the name of the source entity.",
+          "source_suffix": "Added to the name and identifier of the source entity when it is renamed (for example \"source\" gives \"Kitchen Shutter (source)\" and cover.kitchen_shutter_source). No effect if the option above is off.",
+          "disable_other_entities": "Disables all the other entities of the source device (for example Somfy's \"My Position\" or \"Identify\" buttons, which move the cover without going through the custom cover entity and make it lose position tracking). The source entity stays enabled: it receives the commands. Careful: the device's sensors (battery, power…) are disabled too. Everything is enabled again if you untick the option or remove the custom cover entity."
         },
         "sections": {
           "positions": {
             "name": "Preset positions",
-            "description": "A preset position creates a button that moves the cover to that position, placed under the same device. Unlike an original button such as Somfy's \"My Position\", the position stays up to date. The positions also become the favorites in the cover's control dialog, between 0 % and 100 % (max. 8 positions).",
+            "description": "A preset position creates a button that moves the cover entity to that position, placed under the same device. Unlike an original button such as Somfy's \"My Position\", the position stays up to date. The positions also become the favorites in the entity's control dialog, between 0 % and 100 % (max. 8 positions).",
             "data": {
               "presets": "Positions"
             }
@@ -51,42 +51,42 @@
       }
     },
     "error": {
-      "source_introuvable": "This cover cannot be found.",
+      "source_introuvable": "This cover entity cannot be found.",
       "source_deja_chronometree": "This entity is already configured.",
       "suffixe_invalide": "Enter a suffix made of letters or digits.",
       "positions_invalides": "Each preset position needs a name and a percentage between 0 and 100.",
-      "noms_en_double": "This name is already used for a position of this cover.",
+      "noms_en_double": "This name is already used for a position of this entity.",
       "trop_de_positions": "Maximum 8 preset positions."
     },
     "abort": {
-      "already_configured": "This cover is already configured."
+      "already_configured": "This entity is already configured."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Cover settings",
-        "description": "Changes apply immediately. The current position is kept. The name and the name exchange can only be set when the cover is created.",
+        "description": "Changes apply immediately. The current position is kept. The name and the name exchange can only be set when the entity is created.",
         "data": {
           "travel_time_up": "Time to open",
           "travel_time_down": "Time to close",
           "send_stop_at_ends": "Send \"stop\" at the ends",
           "device_class": "Device class",
-          "hide_source": "Hide the original cover",
-          "disable_other_entities": "Disable the other entities of the original device"
+          "hide_source": "Hide the source entity",
+          "disable_other_entities": "Disable the other entities of the source device"
         },
         "data_description": {
           "travel_time_up": "Seconds needed for a complete opening (0 to 100 %).",
           "travel_time_down": "Seconds needed for a complete closing (100 to 0 %).",
           "send_stop_at_ends": "Once opening or closing is complete, still sends a stop command. This is only useful if the cover does not stop by itself at the end of its travel. When in doubt, don't use it.",
           "device_class": "The type of equipment (shutter, blind, door…). It determines the icon.",
-          "hide_source": "The original cover no longer appears in Home Assistant's automatic screens. It is still used internally to run the commands, and it appears again if you remove this entity.",
-          "disable_other_entities": "Disables all the other entities of the original device (for example Somfy's \"My Position\" or \"Identify\" buttons, which move the cover without going through this one and make it lose position tracking). The original cover stays enabled: it receives the commands. Careful: the device's sensors (battery, power…) are disabled too. Everything is enabled again if you untick the option or remove this cover."
+          "hide_source": "The source entity no longer appears in Home Assistant's automatic screens. It is still used internally to run the commands, and it appears again if you remove this entity.",
+          "disable_other_entities": "Disables all the other entities of the source device (for example Somfy's \"My Position\" or \"Identify\" buttons, which move the cover without going through the custom cover entity and make it lose position tracking). The source entity stays enabled: it receives the commands. Careful: the device's sensors (battery, power…) are disabled too. Everything is enabled again if you untick the option or remove the custom cover entity."
         },
         "sections": {
           "positions": {
             "name": "Preset positions",
-            "description": "A preset position creates a button that moves the cover to that position, placed under the same device. Unlike an original button such as Somfy's \"My Position\", the position stays up to date. The positions also become the favorites in the cover's control dialog, between 0 % and 100 % (max. 8 positions).",
+            "description": "A preset position creates a button that moves the cover entity to that position, placed under the same device. Unlike an original button such as Somfy's \"My Position\", the position stays up to date. The positions also become the favorites in the entity's control dialog, between 0 % and 100 % (max. 8 positions).",
             "data": {
               "presets": "Positions"
             }
@@ -96,7 +96,7 @@
     },
     "error": {
       "positions_invalides": "Each preset position needs a name and a percentage between 0 and 100.",
-      "noms_en_double": "This name is already used for a position of this cover.",
+      "noms_en_double": "This name is already used for a position of this entity.",
       "trop_de_positions": "Maximum 8 preset positions."
     }
   },
@@ -135,7 +135,7 @@
   "services": {
     "set_known_position": {
       "name": "Set known position",
-      "description": "Tell the real position of the cover without moving it. Useful when the estimated position has drifted (for example after using the remote control).",
+      "description": "Tell the real position of the cover entity without moving it. Useful when the estimated position has drifted (for example after using the remote control).",
       "fields": {
         "position": {
           "name": "Position",
@@ -146,10 +146,10 @@
   },
   "exceptions": {
     "source_unavailable": {
-      "message": "The cover \"{name}\" is unavailable: {source} is not responding."
+      "message": "The cover entity \"{name}\" is unavailable: {source} is not responding."
     },
     "cover_not_found": {
-      "message": "The cover linked to this button cannot be found."
+      "message": "The custom cover entity linked to this button cannot be found."
     }
   }
 }

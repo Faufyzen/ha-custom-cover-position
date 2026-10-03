@@ -27,9 +27,9 @@ def chemin(source: dict, *cles: str) -> str:
 
 # Noms lisibles des champs et des erreurs (les noms internes ne parlent à personne).
 NOMS_CHAMPS = {
-    "source_entity": "Ouvrant à sélectionner", "name": "Nom", "travel_time_up": "Délai d'ouverture",
+    "source_entity": "Entité à sélectionner", "name": "Nom", "travel_time_up": "Délai d'ouverture",
     "travel_time_down": "Délai de fermeture", "send_stop_at_ends": "Stop aux extrémités",
-    "device_class": "Classe d'appareil", "hide_source": "Masquer l'ouvrant d'origine",
+    "device_class": "Classe d'appareil", "hide_source": "Masquer l'entité source",
     "disable_other_entities": "Désactiver les autres entités", "take_over": "Reprendre le nom",
     "source_suffix": "Suffixe", "position": "Position", "icon": "Icône",
 }
@@ -79,15 +79,15 @@ class Zone:
 
 def construire() -> list[Zone]:
     zones = []
-    z = Zone(1, "Bouton d'ajout", "page de l'intégration, bouton pour créer un nouvel ouvrant")
+    z = Zone(1, "Bouton d'ajout", "page de l'intégration, bouton pour créer une nouvelle entité")
     z.ajouter("Bouton", "config", "initiate_flow", "user"); zones.append(z)
 
-    z = Zone(2, "Création, étape 1 : choisir l'ouvrant", "première fenêtre quand on ajoute un ouvrant")
+    z = Zone(2, "Création, étape 1 : choisir l'entité source", "première fenêtre quand on ajoute une entité")
     base = ("config", "step", "user")
     z.ajouter("Titre", *base, "title"); z.ajouter("Description", *base, "description")
     z.champs(base, ["source_entity"]); zones.append(z)
 
-    z = Zone(3, "Création, étape 2 : réglages de l'ouvrant", "deuxième fenêtre, dans l'ordre d'affichage")
+    z = Zone(3, "Création, étape 2 : réglages de l'entité", "deuxième fenêtre, dans l'ordre d'affichage")
     base = ("config", "step", "parametres")
     z.ajouter("Titre", *base, "title"); z.ajouter("Description ({source} = ouvrant choisi)", *base, "description")
     z.champs(base, ["name", "travel_time_up", "travel_time_down", "send_stop_at_ends", "device_class",
@@ -101,7 +101,7 @@ def construire() -> list[Zone]:
         z.ajouter(f"Erreur « {NOMS_ERREURS[cle]} »", "config", "error", cle)
     z.ajouter("Abandon « déjà configuré »", "config", "abort", "already_configured"); zones.append(z)
 
-    z = Zone(5, "Réglages de l'ouvrant (roue dentée)", "formulaire de modification d'un ouvrant existant")
+    z = Zone(5, "Réglages de l'entité (roue dentée)", "formulaire de modification d'une entité existante")
     base = ("options", "step", "init")
     z.ajouter("Titre", *base, "title"); z.ajouter("Description", *base, "description")
     z.champs(base, ["travel_time_up", "travel_time_down", "send_stop_at_ends", "device_class",
@@ -137,15 +137,15 @@ def zone_code() -> str:
         return f"| {ref} | {cellule(ou)} | {cellule(en)} | {cellule(fr)} |"
     exceptions = ("exceptions",)
     rows = [
-        ligne("Z9.1", "Message d'erreur quand on commande un ouvrant dont l'ouvrant d'origine est indisponible",
+        ligne("Z9.1", "Message d'erreur quand on commande une entité dont l'entité source est indisponible",
               chemin(EN, *exceptions, "source_unavailable", "message"), chemin(FR, *exceptions, "source_unavailable", "message")),
-        ligne("Z9.2", "Message d'erreur quand on appuie sur un bouton de position dont l'ouvrant a disparu",
+        ligne("Z9.2", "Message d'erreur quand on appuie sur un bouton de position dont l'entité personnalisée a disparu",
               chemin(EN, *exceptions, "cover_not_found", "message"), chemin(FR, *exceptions, "cover_not_found", "message")),
-        ligne("Z9.3", "Suffixe proposé pour l'ouvrant d'origine (valeur du champ)", "source", "source"),
-        ligne("Z9.4", "Nom de l'ouvrant d'origine une fois renommé", "<name> (<suffix>), for example Kitchen Shutter (source)",
+        ligne("Z9.3", "Suffixe proposé pour l'entité source (valeur du champ)", "source", "source"),
+        ligne("Z9.4", "Nom de l'entité source une fois renommée", "<name> (<suffix>), for example Kitchen Shutter (source)",
               "<Nom> (<suffixe>), par exemple Volet Cuisine (source)"),
         ligne("Z9.5", "Nom d'un bouton de position", "<cover name> <position name>, for example Kitchen Shutter Sun",
-              "<Nom de l'ouvrant> <Nom de la position>, par exemple Volet Cuisine Soleil"),
+              "<Nom de l'entité> <Nom de la position>, par exemple Volet Cuisine Soleil"),
         ligne("Z9.6", "Titre de l'intégration (carte, recherche)", "Custom Cover Position", "Custom Cover Position"),
     ]
     return ("## Zone 9 — Textes écrits dans le code\n\n*Messages d'erreur (anglais par défaut, avec traduction) et formats construits "
