@@ -31,34 +31,43 @@ automatisations existants l'utilisent alors sans modification.
 ## Réglages
 
 Les réglages sont affichés et expliqués dans l'interface (français et anglais). Ils se modifient avec la
-roue dentée de l'ouvrant ; la position actuelle est conservée.
+roue dentée de l'ouvrant ; la position actuelle est conservée. Le nom, l'échange des noms et le suffixe se
+choisissent seulement à la création. Les libellés ci-dessous sont ceux du formulaire, dans son ordre.
 
 | Réglage | Rôle |
 | --- | --- |
-| Ouvrant réel à enrober | L'ouvrant qui reçoit les ordres (par exemple `cover.volet_salon_1_overkiz`). |
+| Sélectionnez une entité | L'entité ouvrant (`cover`) à laquelle ajouter la position estimée ; c'est elle qui reçoit les commandes (par exemple `cover.volet_salon_1_overkiz`). |
 | Nom de l'ouvrant | Nom affiché ; l'identifiant en est déduit (`Volet Salon 1` donne `cover.volet_salon_1`). |
-| Temps d'ouverture / de fermeture | Durée en secondes d'un trajet complet. |
-| Envoyer « stop » aux extrémités | Envoie un ordre d'arrêt même après une ouverture ou une fermeture complète. Laisser désactivé sauf besoin. |
+| Délai d'ouverture / Délai de fermeture | Durée en secondes d'un trajet complet. |
+| Envoyer « stop » aux extrémités | Envoie une commande d'arrêt même après une ouverture ou une fermeture complète. Laisser désactivé sauf besoin. |
 | Classe d'appareil | Les types de Home Assistant : volet, store, store vénitien, auvent, rideau, porte, portail, garage, clapet, fenêtre. |
-| Désactiver les autres entités de l'appareil d'origine | Désactivé par défaut. Désactive tout sauf l'ouvrant d'origine (par exemple les boutons « My Position » d'Overkiz, qui commandent le volet sans passer par l'ouvrant et lui font perdre sa position estimée). Attention : les capteurs de l'appareil sont désactivés aussi. Tout est réactivé si l'option est décochée ou l'ouvrant supprimé. |
-| Positions prédéfinies | Une liste (nom, pourcentage, icône facultative ; 8 au plus). Chaque ligne crée un bouton rangé sous l'appareil d'origine, nommé « <ouvrant> <position> », qui amène l'ouvrant à cette position. Les positions deviennent aussi les favoris de la fenêtre de l'ouvrant : « 0, vos positions, 100 » (sans position, les favoris par défaut restent ; une modification faite à la main dans la fenêtre est respectée jusqu'au prochain changement de la liste). |
 | Masquer l'ouvrant d'origine | L'original disparaît des écrans automatiques (il reste dans les listes de choix des scripts) ; il réapparaît si l'ouvrant est supprimé. |
-| Reprendre le nom et l'identifiant de l'ouvrant d'origine | Activé par défaut. Seulement à la création, et seulement si le nom saisi donne l'identifiant de l'original : l'original est renommé avec le suffixe choisi (`cover.volet_cuisine_origine`), le nouvel ouvrant prend `cover.volet_cuisine`. À la suppression, tout est remis. Désactivé : le nouvel ouvrant reçoit un autre identifiant (`cover.volet_cuisine_2`). |
-| Suffixe de l'ouvrant d'origine | Ajouté au nom et à l'identifiant de l'original quand il est renommé (« origine » en français, « source » sinon). |
+| Désactiver les autres entités de l'appareil d'origine | Désactivé par défaut. Désactive tout sauf l'ouvrant d'origine (par exemple les boutons « My Position » de Somfy, qui commandent le volet sans passer par l'ouvrant et lui font perdre le suivi de position). Attention : les capteurs de l'appareil sont désactivés aussi. Tout est réactivé si l'option est décochée ou l'ouvrant supprimé. |
+| Positions prédéfinies | Une liste (nom, pourcentage, icône facultative ; 8 au maximum), repliée tant qu'elle est vide. Chaque ligne crée un bouton rangé sous le même appareil, nommé « <ouvrant> <position> », qui amène l'ouvrant à cette position. Les positions deviennent aussi les favoris de la fenêtre de contrôle de l'ouvrant : « 0, vos positions, 100 » (sans position, les favoris par défaut restent ; une modification faite à la main dans la fenêtre est respectée jusqu'au prochain changement de la liste). |
+| Reprendre le nom et l'identifiant de l'ouvrant d'origine | Activé par défaut. Seulement si le nom saisi donne l'identifiant de l'original : l'original est renommé avec le suffixe choisi (`cover.volet_cuisine_source`), le nouvel ouvrant prend `cover.volet_cuisine`. À la suppression, tout est remis. Désactivé : le nouvel ouvrant reçoit un autre identifiant (`cover.volet_cuisine_2`). |
+| Suffixe pour l'ouvrant d'origine | Ajouté au nom et à l'identifiant de l'original quand il est renommé (« source » par défaut). |
 
 ## Comment ça marche
 
-- **Ouvrir / Fermer** : l'ordre est envoyé au volet réel, et la position est estimée à 100 ou 0 à la fin
-  du temps de trajet. L'ordre est toujours envoyé, même si la position estimée est déjà à l'extrémité,
+- **Ouvrir / Fermer** : la commande est envoyée à l'ouvrant d'origine, et la position est estimée à 100 ou 0 à la fin
+  du temps de trajet. La commande est toujours envoyée, même si la position estimée est déjà à l'extrémité,
   ce qui permet de recaler un volet qui a dérivé.
-- **Aller à une position** : un ordre d'ouverture ou de fermeture est envoyé, puis un ordre d'arrêt à
+- **Aller à une position** : une commande d'ouverture ou de fermeture est envoyée, puis une commande d'arrêt à
   l'instant calculé. Si le volet va déjà dans le bon sens, seule l'heure d'arrêt change.
-- **Plusieurs volets à la fois** (script de groupe) : chaque volet est indépendant et ses ordres sont
-  exécutés l'un après l'autre grâce à un verrou propre au volet.
+- **Plusieurs volets à la fois** (script de groupe) : chaque volet est indépendant et ses commandes sont
+  exécutées l'un après l'autre grâce à un verrou propre au volet.
 - **Redémarrage de Home Assistant** : la dernière position est restaurée.
 
 La position est une **estimation** : elle peut dériver avec le temps (commande faite à la télécommande,
-par exemple). Un ordre Ouvrir ou Fermer complet, ou le service `set_known_position`, la recale.
+par exemple). Une commande Ouvrir ou Fermer complète, ou le service `set_known_position`, la recale.
+
+## Diagnostic
+
+Pour comprendre un problème (ou le décrire à quelqu'un), télécharger le diagnostic : page de l'intégration,
+menu ⋮ de l'ouvrant, **Télécharger les diagnostics**. Le fichier (en anglais, sans accent, sans mot de passe
+ni jeton) donne les versions, la configuration, l'état de l'ouvrant et de l'ouvrant d'origine, les boutons de
+positions et les autres entités de l'appareil. Le bouton de la page de l'appareil appartient à l'intégration
+d'origine (par exemple Overkiz) et ne donne pas ce fichier.
 
 ## Développement
 
@@ -66,6 +75,7 @@ par exemple). Un ordre Ouvrir ou Fermer complet, ou le service `set_known_positi
 python3 -m unittest discover -s tests -v          # tests de l'estimateur (sans Home Assistant)
 ./tools/deployer-sandbox.sh --redemarrer          # copie dans la VM de test et redémarre
 python3 tools/essai_sandbox.py                    # scénarios complets sur la VM de test
+python3 tools/tableau_textes.py fichier.md        # tableau anglais/français des textes, pour relecture
 ```
 
 Les scénarios utilisent l'intégration `demo` de Home Assistant comme faux volets. Les outils supposent la

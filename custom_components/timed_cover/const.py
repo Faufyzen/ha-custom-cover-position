@@ -31,8 +31,7 @@ DEFAULT_DEVICE_CLASS = "shutter"
 DEFAULT_HIDE_SOURCE = True
 DEFAULT_TAKE_OVER = True
 DEFAULT_DISABLE_OTHERS = False  # prudent : elle désactive aussi les capteurs (batterie, puissance…)
-DEFAULT_SUFFIX = {"fr": "origine"}  # langue -> suffixe proposé
-DEFAULT_SUFFIX_OTHER = "source"
+DEFAULT_SUFFIX = "source"  # suffixe proposé pour l'ouvrant d'origine renommé (toutes les langues)
 
 # Classes d'appareil d'un ouvrant (toutes celles de Home Assistant).
 DEVICE_CLASSES = [

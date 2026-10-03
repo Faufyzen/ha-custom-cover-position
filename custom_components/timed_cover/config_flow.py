@@ -59,7 +59,6 @@ from .const import (
     DEFAULT_HIDE_SOURCE,
     DEFAULT_SEND_STOP_AT_ENDS,
     DEFAULT_SUFFIX,
-    DEFAULT_SUFFIX_OTHER,
     DEFAULT_TAKE_OVER,
     DEFAULT_TRAVEL_TIME,
     DEVICE_CLASSES,
@@ -171,11 +170,6 @@ def _nom_propose(nom_source: str) -> str:
     return re.sub(r"\s*\[[^\]]*\]\s*$", "", nom_source).strip() or nom_source
 
 
-def _suffixe_propose(langue: str) -> str:
-    """Suffixe proposé pour l'ouvrant d'origine, dans la langue de l'utilisateur."""
-    return DEFAULT_SUFFIX.get(langue.split("-")[0], DEFAULT_SUFFIX_OTHER)
-
-
 class TimedCoverConfigFlow(ConfigFlow, domain=DOMAIN):
     """Création d'un volet à temps de trajet."""
 
@@ -272,7 +266,7 @@ class TimedCoverConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Required(
                     CONF_SOURCE_SUFFIX,
                     default=saisi.get(
-                        CONF_SOURCE_SUFFIX, _suffixe_propose(self.hass.config.language)
+                        CONF_SOURCE_SUFFIX, DEFAULT_SUFFIX
                     ),
                 ): TextSelector(),
             }

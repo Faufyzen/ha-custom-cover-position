@@ -80,8 +80,8 @@ def _memoriser_id_interne(hass: HomeAssistant, entry: ConfigEntry) -> None:
 def _echanger_les_noms(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """À la première mise en route, l'ouvrant d'origine cède son nom et son identifiant.
 
-    L'ouvrant d'origine est renommé avec le suffixe choisi (« Volet Cuisine (origine) »,
-    `cover.volet_cuisine_origine`) et le nouvel ouvrant prend son nom et son identifiant : les
+    L'ouvrant d'origine est renommé avec le suffixe choisi (« Volet Cuisine (source) »,
+    `cover.volet_cuisine_source`) et le nouvel ouvrant prend son nom et son identifiant : les
     scripts et automatisations qui visent `cover.volet_cuisine` utilisent alors le nouvel
     ouvrant, sans modification. L'échange n'a lieu que si l'identifiant voulu est justement
     celui de l'ouvrant d'origine, et une seule fois (ce qu'il faudra remettre en état à la

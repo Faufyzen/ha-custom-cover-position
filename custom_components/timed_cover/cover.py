@@ -348,7 +348,9 @@ class OuvrantPositionEstimee(CoverEntity, RestoreEntity):
         """Envoie un ordre au volet réel et attend qu'il l'ait accepté."""
         if not self.available:
             raise HomeAssistantError(
-                f"L'ouvrant « {self.name} » est indisponible : {self._source} ne répond pas."
+                translation_domain=DOMAIN,
+                translation_key="source_unavailable",
+                translation_placeholders={"name": str(self.name), "source": self._source},
             )
         await self.hass.services.async_call(
             "cover", service, {"entity_id": self._source}, blocking=True

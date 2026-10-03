@@ -77,3 +77,10 @@ def options_cover(entity_id: str) -> dict:
     """Options du domaine « cover » d'une entité (par exemple favorite_positions)."""
     rep = _echange([{"type": "config/entity_registry/get", "entity_id": entity_id}])[1]
     return ((rep.get("result") or {}).get("options") or {}).get("cover", {}) or {}
+
+
+def traductions(langue: str, categorie: str, integration: str = "timed_cover") -> dict:
+    """Textes de l'interface d'une langue, tels que Home Assistant les sert (par exemple « exceptions »)."""
+    rep = _echange([{"type": "frontend/get_translations", "language": langue, "category": categorie,
+                     "integration": [integration]}])[1]
+    return (rep.get("result") or {}).get("resources", {})

@@ -6,9 +6,9 @@
     "step": {
       "user": {
         "title": "Choose the cover",
-        "description": "Choose the real cover to wrap (for example an Overkiz shutter). The new cover is placed under the same device and adds an estimated position.",
+        "description": "Select the entity to link. The new cover will be placed under the same device and will show its current position.",
         "data": {
-          "source_entity": "Real cover to wrap"
+          "source_entity": "Select an entity"
         },
         "data_description": {
           "source_entity": "The cover entity that receives the commands."
@@ -25,29 +25,26 @@
           "device_class": "Device class",
           "hide_source": "Hide the original cover",
           "take_over": "Take over the name and identifier of the original cover",
-          "source_suffix": "Suffix of the original cover",
+          "source_suffix": "Suffix for the original cover",
           "disable_other_entities": "Disable the other entities of the original device"
         },
         "data_description": {
           "name": "The name shown in Home Assistant. Keep the name of the original cover to take over its identifier (see below).",
           "travel_time_up": "Seconds needed for a complete opening (0 to 100 %).",
           "travel_time_down": "Seconds needed for a complete closing (100 to 0 %).",
-          "send_stop_at_ends": "After a complete opening or closing, still send a stop command. Only useful if the cover does not stop by itself at the end of its travel. When in doubt, leave it off.",
-          "device_class": "The type of equipment (shutter, blind, door...). It determines the icon.",
-          "hide_source": "The original cover no longer appears in the automatic screens of Home Assistant. It is still used internally to send commands, and shown again if this cover is removed.",
-          "take_over": "On: the new cover takes the name and identifier of the original cover (for example cover.kitchen_shutter) and the original is renamed with the suffix below. Your scripts and automations then use the new cover without any change. Off: the new cover gets a different identifier (for example cover.kitchen_shutter_2) and your scripts must be edited to use it. The swap only happens if the name above is the name of the original cover.",
+          "send_stop_at_ends": "Once opening or closing is complete, still sends a stop command. This is only useful if the cover does not stop by itself at the end of its travel. When in doubt, don't use it.",
+          "device_class": "The type of equipment (shutter, blind, door…). It determines the icon.",
+          "hide_source": "The original cover no longer appears in Home Assistant's automatic screens. It is still used internally to run the commands, and it appears again if you remove this entity.",
+          "take_over": "On: the new cover takes the name and identifier of the original one (for example cover.kitchen_shutter), and the original is renamed with the suffix below. Your scripts and automations then use the new cover without any change. Off: the new cover gets a different identifier (for example cover.kitchen_shutter_2) and your scripts must be edited to use it. The exchange only happens if the name entered above is the name of the original cover.",
           "source_suffix": "Added to the name and identifier of the original cover when it is renamed (for example \"source\" gives \"Kitchen Shutter (source)\" and cover.kitchen_shutter_source). No effect if the option above is off.",
-          "disable_other_entities": "Disables all the other entities of the original device (for example the Overkiz \"My Position\" or \"Identify\" buttons, which move the cover without going through this one and make it lose its estimated position). The original cover stays enabled: it receives the commands. Careful: the device's sensors (battery, power...) are disabled too. Everything is enabled again if you untick the option or remove this cover."
+          "disable_other_entities": "Disables all the other entities of the original device (for example Somfy's \"My Position\" or \"Identify\" buttons, which move the cover without going through this one and make it lose position tracking). The original cover stays enabled: it receives the commands. Careful: the device's sensors (battery, power…) are disabled too. Everything is enabled again if you untick the option or remove this cover."
         },
         "sections": {
           "positions": {
             "name": "Preset positions",
-            "description": "A preset position creates a button that moves the cover to a chosen opening (for example \"Sun shade\" at 40 %), placed under the same device. It goes through this cover: the estimated position stays right, unlike an original button such as Overkiz's \"My Position\". The positions also become the favorites of the cover's dialog, between 0 % and 100 %. At most 8 positions.",
+            "description": "A preset position creates a button that moves the cover to that position, placed under the same device. Unlike an original button such as Somfy's \"My Position\", the position stays up to date. The positions also become the favorites in the cover's control dialog, between 0 % and 100 % (max. 8 positions).",
             "data": {
               "presets": "Positions"
-            },
-            "data_description": {
-              "presets": "\"Add\" creates a row: a name (for example \"Sun shade\"), a percentage and, if you want, an icon."
             }
           }
         }
@@ -55,11 +52,11 @@
     },
     "error": {
       "source_introuvable": "This cover cannot be found.",
-      "source_deja_chronometree": "This cover already has an estimated position: choose the real cover.",
+      "source_deja_chronometree": "This entity is already configured.",
       "suffixe_invalide": "Enter a suffix made of letters or digits.",
       "positions_invalides": "Each preset position needs a name and a percentage between 0 and 100.",
-      "noms_en_double": "Two positions have the same name.",
-      "trop_de_positions": "At most 8 preset positions."
+      "noms_en_double": "This name is already used for a position of this cover.",
+      "trop_de_positions": "Maximum 8 preset positions."
     },
     "abort": {
       "already_configured": "This cover is already configured."
@@ -69,7 +66,7 @@
     "step": {
       "init": {
         "title": "Cover settings",
-        "description": "Changes apply immediately. The current position is kept. The name and the swap of names can only be set when the cover is created.",
+        "description": "Changes apply immediately. The current position is kept. The name and the name exchange can only be set when the cover is created.",
         "data": {
           "travel_time_up": "Time to open",
           "travel_time_down": "Time to close",
@@ -81,20 +78,17 @@
         "data_description": {
           "travel_time_up": "Seconds needed for a complete opening (0 to 100 %).",
           "travel_time_down": "Seconds needed for a complete closing (100 to 0 %).",
-          "send_stop_at_ends": "After a complete opening or closing, still send a stop command. Only useful if the cover does not stop by itself at the end of its travel. When in doubt, leave it off.",
-          "device_class": "The type of equipment (shutter, blind, door...). It determines the icon.",
-          "hide_source": "The original cover no longer appears in the automatic screens of Home Assistant. It is still used internally to send commands, and shown again if this cover is removed.",
-          "disable_other_entities": "Disables all the other entities of the original device (for example the Overkiz \"My Position\" or \"Identify\" buttons, which move the cover without going through this one and make it lose its estimated position). The original cover stays enabled: it receives the commands. Careful: the device's sensors (battery, power...) are disabled too. Everything is enabled again if you untick the option or remove this cover."
+          "send_stop_at_ends": "Once opening or closing is complete, still sends a stop command. This is only useful if the cover does not stop by itself at the end of its travel. When in doubt, don't use it.",
+          "device_class": "The type of equipment (shutter, blind, door…). It determines the icon.",
+          "hide_source": "The original cover no longer appears in Home Assistant's automatic screens. It is still used internally to run the commands, and it appears again if you remove this entity.",
+          "disable_other_entities": "Disables all the other entities of the original device (for example Somfy's \"My Position\" or \"Identify\" buttons, which move the cover without going through this one and make it lose position tracking). The original cover stays enabled: it receives the commands. Careful: the device's sensors (battery, power…) are disabled too. Everything is enabled again if you untick the option or remove this cover."
         },
         "sections": {
           "positions": {
             "name": "Preset positions",
-            "description": "A preset position creates a button that moves the cover to a chosen opening (for example \"Sun shade\" at 40 %), placed under the same device. It goes through this cover: the estimated position stays right, unlike an original button such as Overkiz's \"My Position\". The positions also become the favorites of the cover's dialog, between 0 % and 100 %. At most 8 positions.",
+            "description": "A preset position creates a button that moves the cover to that position, placed under the same device. Unlike an original button such as Somfy's \"My Position\", the position stays up to date. The positions also become the favorites in the cover's control dialog, between 0 % and 100 % (max. 8 positions).",
             "data": {
               "presets": "Positions"
-            },
-            "data_description": {
-              "presets": "\"Add\" creates a row: a name (for example \"Sun shade\"), a percentage and, if you want, an icon."
             }
           }
         }
@@ -102,8 +96,8 @@
     },
     "error": {
       "positions_invalides": "Each preset position needs a name and a percentage between 0 and 100.",
-      "noms_en_double": "Two positions have the same name.",
-      "trop_de_positions": "At most 8 preset positions."
+      "noms_en_double": "This name is already used for a position of this cover.",
+      "trop_de_positions": "Maximum 8 preset positions."
     }
   },
   "selector": {
@@ -129,7 +123,7 @@
         },
         "position": {
           "name": "Position",
-          "description": "Wanted opening in percent, from 0 (closed) to 100 (open)."
+          "description": "Desired opening in percent, from 0 (closed) to 100 (open)."
         },
         "icon": {
           "name": "Icon (optional)",
@@ -148,6 +142,14 @@
           "description": "Real position, 0 (closed) to 100 (open)."
         }
       }
+    }
+  },
+  "exceptions": {
+    "source_unavailable": {
+      "message": "The cover \"{name}\" is unavailable: {source} is not responding."
+    },
+    "cover_not_found": {
+      "message": "The cover linked to this button cannot be found."
     }
   }
 }

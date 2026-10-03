@@ -90,7 +90,7 @@ def creer_volet(cle: str, source: str, nom: str | None = None, **reglages) -> st
             "device_class": "shutter",
             "hide_source": True,
             "take_over": True,
-            "source_suffix": "origine",
+            "source_suffix": "source",
             **reglages,
         },
     )
@@ -300,14 +300,14 @@ def main() -> int:
     source = "cover.hall_window"
     creer_volet("couloir", source, nom="Hall Window")
     time.sleep(2.5)
-    origine = "cover.hall_window_origine"
+    origine = "cover.hall_window_source"
     nouveau = etat(source)
     verifier("l'identifiant d'origine est repris par le nouvel ouvrant", nouveau["attributes"].get("travel_time_up") == TEMPS_MONTEE, str(nouveau["attributes"].get("travel_time_up")))
     verifier("le nouvel ouvrant pointe vers l'ouvrant d'origine renommé", nouveau["attributes"].get("source_entity") == origine, str(nouveau["attributes"].get("source_entity")))
     verifier("nom du nouvel ouvrant = « Hall Window »", nouveau["attributes"].get("friendly_name") == "Hall Window", str(nouveau["attributes"].get("friendly_name")))
     verifier("l'ouvrant d'origine existe sous son nouvel identifiant", existe(origine))
     if existe(origine):
-        verifier("nom de l'ouvrant d'origine = « Hall Window (origine) »", etat(origine)["attributes"].get("friendly_name") == "Hall Window (origine)", str(etat(origine)["attributes"].get("friendly_name")))
+        verifier("nom de l'ouvrant d'origine = « Hall Window (source) »", etat(origine)["attributes"].get("friendly_name") == "Hall Window (source)", str(etat(origine)["attributes"].get("friendly_name")))
         verifier("l'ouvrant d'origine est masqué", modele(f"{{{{ is_hidden_entity('{origine}') }}}}") == "True")
         service("timed_cover", "set_known_position", entity_id=source, position=100)
         service("cover", "close_cover", entity_id=source)
@@ -400,6 +400,21 @@ def main() -> int:
     verifier("aucun secret dans le diagnostic", not any(m in json.dumps(diag).lower() for m in ("password", "token", "bearer")))
     nettoyer()
     time.sleep(2.0)
+
+    print("\n17. Textes : messages d'erreur du code traduits, suffixe proposé")
+    sys.path.insert(0, str(Path(__file__).parent))
+    from ws_registre import traductions
+    en = traductions("en", "exceptions"); fr = traductions("fr", "exceptions")
+    msg_en = en.get("component.timed_cover.exceptions.source_unavailable.message", "")
+    msg_fr = fr.get("component.timed_cover.exceptions.source_unavailable.message", "")
+    verifier("message d'erreur en anglais", "is unavailable" in msg_en, msg_en)
+    verifier("message d'erreur en français", "indisponible" in msg_fr, msg_fr)
+    verifier("second message traduit (français)", "introuvable" in fr.get("component.timed_cover.exceptions.cover_not_found.message", ""))
+    f = api("POST", "/api/config/config_entries/flow", {"handler": "timed_cover"})
+    f = api("POST", f"/api/config/config_entries/flow/{f['flow_id']}", {"source_entity": SOURCES["cuisine"]})
+    defaut = next(c for c in f["data_schema"] if c["name"] == "source_suffix").get("default")
+    api("DELETE", "/api/config/config_entries/flow/" + f["flow_id"])
+    verifier("suffixe proposé : « source » (sandbox en français)", defaut == "source", str(defaut))
 
     echecs = [r for r in resultats if not r[1]]
     print(f"\nRésultat : {len(resultats) - len(echecs)}/{len(resultats)} vérifications réussies.")

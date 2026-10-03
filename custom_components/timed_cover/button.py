@@ -107,7 +107,9 @@ class PositionPredefinie(ButtonEntity):
             "cover", DOMAIN, self._entry.entry_id
         )
         if identifiant is None:
-            raise HomeAssistantError("L'ouvrant de ce bouton est introuvable.")
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="cover_not_found"
+            )
         await self.hass.services.async_call(
             "cover",
             "set_cover_position",
