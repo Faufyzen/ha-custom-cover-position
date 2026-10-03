@@ -53,7 +53,10 @@ from .const import (
     ATTR_TRAVEL_TIME_DOWN,
     ATTR_TRAVEL_TIME_UP,
     CONF_DEVICE_CLASS,
+    CONF_FAVORITES_APPLIED,
     CONF_NAME,
+    CONF_PRESET_POSITION,
+    CONF_PRESETS,
     CONF_SEND_STOP_AT_ENDS,
     CONF_TRAVEL_TIME_DOWN,
     CONF_TRAVEL_TIME_UP,
@@ -103,6 +106,7 @@ async def async_setup_entry(
 ) -> None:
     """Ajoute l'ouvrant à position estimée d'une entrée de configuration."""
     _preparer_registre(hass, entry)
+    _regler_favoris(hass, entry)
     async_add_entities([OuvrantPositionEstimee(hass, entry)])
 
     plateforme = entity_platform.async_get_current_platform()
@@ -110,6 +114,41 @@ async def async_setup_entry(
         SERVICE_SET_KNOWN_POSITION,
         {vol.Required(ATTR_POSITION): vol.All(vol.Coerce(int), vol.Range(min=0, max=100))},
         "async_set_known_position",
+    )
+
+
+def _regler_favoris(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Aligne les positions favorites de la fenêtre de l'ouvrant sur les positions prédéfinies.
+
+    Home Assistant range les favoris (les pastilles 0 %, 25 %, 75 %, 100 %) dans les options du
+    registre de l'entité, clé `favorite_positions` du domaine `cover`, et l'interface les
+    affiche sans limite de nombre. Sans position prédéfinie, on n'y touche pas : les favoris par
+    défaut restent. Avec des positions, les favoris deviennent « 0, les positions, 100 ». On ne
+    les réécrit que lorsque la liste des positions a changé, pour respecter une modification
+    faite ensuite à la main dans la fenêtre.
+    """
+    reglages = {**entry.data, **entry.options}
+    positions = sorted({int(p[CONF_PRESET_POSITION]) for p in reglages.get(CONF_PRESETS, [])})
+    voulus = sorted({0, 100, *positions}) if positions else []
+    appliques = list(entry.data.get(CONF_FAVORITES_APPLIED, []))
+    if voulus == appliques:
+        return
+    registre = er.async_get(hass)
+    identifiant = registre.async_get_entity_id("cover", DOMAIN, entry.entry_id)
+    if identifiant is None:
+        return
+    options = dict(registre.async_get(identifiant).options.get("cover", {}))
+    actuels = options.get("favorite_positions")
+    if voulus:
+        options["favorite_positions"] = voulus
+    elif actuels is not None and sorted(actuels) == appliques:
+        del options["favorite_positions"]  # retour aux favoris par défaut
+    else:
+        options = None  # l'utilisateur a changé les favoris à la main : on n'y touche pas
+    if options is not None:
+        registre.async_update_entity_options(identifiant, "cover", options or None)
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_FAVORITES_APPLIED: voulus}
     )
 
 

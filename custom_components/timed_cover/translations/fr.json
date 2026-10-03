@@ -25,7 +25,8 @@
           "device_class": "Classe d'appareil",
           "hide_source": "Masquer l'ouvrant d'origine",
           "take_over": "Reprendre le nom et l'identifiant de l'ouvrant d'origine",
-          "source_suffix": "Suffixe de l'ouvrant d'origine"
+          "source_suffix": "Suffixe de l'ouvrant d'origine",
+          "disable_other_entities": "Désactiver les autres entités de l'appareil d'origine"
         },
         "data_description": {
           "name": "Le nom affiché dans Home Assistant. Gardez le nom de l'ouvrant d'origine pour reprendre son identifiant (voir plus bas).",
@@ -35,14 +36,30 @@
           "device_class": "Le type d'équipement (volet, store, porte…). Il détermine l'icône.",
           "hide_source": "L'ouvrant d'origine n'apparaît plus dans les écrans automatiques de Home Assistant. Il reste utilisé en interne pour envoyer les ordres, et il réapparaît si vous supprimez cet ouvrant.",
           "take_over": "Activé : le nouvel ouvrant prend le nom et l'identifiant de l'ouvrant d'origine (par exemple cover.volet_cuisine), et l'original est renommé avec le suffixe ci-dessous. Vos scripts et automatisations utilisent alors le nouvel ouvrant sans aucune modification. Désactivé : le nouvel ouvrant reçoit un identifiant différent (par exemple cover.volet_cuisine_2) et vos scripts devront être modifiés pour l'utiliser. L'échange n'a lieu que si le nom saisi ci-dessus est celui de l'ouvrant d'origine.",
-          "source_suffix": "Ajouté au nom et à l'identifiant de l'ouvrant d'origine quand il est renommé (par exemple « origine » donne « Volet Cuisine (origine) » et cover.volet_cuisine_origine). Sans effet si l'option ci-dessus est désactivée."
+          "source_suffix": "Ajouté au nom et à l'identifiant de l'ouvrant d'origine quand il est renommé (par exemple « origine » donne « Volet Cuisine (origine) » et cover.volet_cuisine_origine). Sans effet si l'option ci-dessus est désactivée.",
+          "disable_other_entities": "Désactive toutes les autres entités de l'appareil d'origine (par exemple les boutons « My Position » ou « Identifier » d'Overkiz, qui commandent le volet sans passer par cet ouvrant et lui font perdre sa position estimée). L'ouvrant d'origine reste actif : c'est lui qui reçoit les ordres. Attention : les capteurs de l'appareil (batterie, puissance…) sont aussi désactivés. Tout est réactivé si vous décochez l'option ou supprimez cet ouvrant."
+        },
+        "sections": {
+          "positions": {
+            "name": "Positions prédéfinies",
+            "description": "Une position prédéfinie crée un bouton qui amène l'ouvrant à une ouverture choisie (par exemple « Pare-soleil » à 40 %), rangé sous le même appareil. Il passe par cet ouvrant : la position estimée reste juste, contrairement à un bouton d'origine comme « My Position » d'Overkiz. Les positions deviennent aussi les favoris de la fenêtre de l'ouvrant, entre 0 % et 100 %. Au plus 8 positions.",
+            "data": {
+              "presets": "Positions"
+            },
+            "data_description": {
+              "presets": "« Ajouter » crée une ligne : un nom (par exemple « Pare-soleil »), un pourcentage et, si vous le voulez, une icône."
+            }
+          }
         }
       }
     },
     "error": {
       "source_introuvable": "Cet ouvrant est introuvable. Vérifiez qu'il est bien présent dans Home Assistant.",
       "source_deja_chronometree": "Cet ouvrant a déjà une position estimée : choisissez l'ouvrant réel (par exemple celui d'Overkiz).",
-      "suffixe_invalide": "Saisissez un suffixe composé de lettres ou de chiffres."
+      "suffixe_invalide": "Saisissez un suffixe composé de lettres ou de chiffres.",
+      "positions_invalides": "Chaque position prédéfinie doit avoir un nom et un pourcentage compris entre 0 et 100.",
+      "noms_en_double": "Deux positions portent le même nom.",
+      "trop_de_positions": "Au plus 8 positions prédéfinies."
     },
     "abort": {
       "already_configured": "Cet ouvrant est déjà configuré."
@@ -58,16 +75,35 @@
           "travel_time_down": "Temps de fermeture",
           "send_stop_at_ends": "Envoyer « stop » aux extrémités",
           "device_class": "Classe d'appareil",
-          "hide_source": "Masquer l'ouvrant d'origine"
+          "hide_source": "Masquer l'ouvrant d'origine",
+          "disable_other_entities": "Désactiver les autres entités de l'appareil d'origine"
         },
         "data_description": {
           "travel_time_up": "Durée, en secondes, d'une ouverture complète (de 0 à 100 %).",
           "travel_time_down": "Durée, en secondes, d'une fermeture complète (de 100 à 0 %).",
           "send_stop_at_ends": "Après une ouverture ou une fermeture complète, envoie quand même un ordre d'arrêt. Utile seulement si l'ouvrant ne s'arrête pas tout seul en fin de course. En cas de doute, laissez désactivé.",
           "device_class": "Le type d'équipement (volet, store, porte…). Il détermine l'icône.",
-          "hide_source": "L'ouvrant d'origine n'apparaît plus dans les écrans automatiques de Home Assistant. Il reste utilisé en interne pour envoyer les ordres, et il réapparaît si vous supprimez cet ouvrant."
+          "hide_source": "L'ouvrant d'origine n'apparaît plus dans les écrans automatiques de Home Assistant. Il reste utilisé en interne pour envoyer les ordres, et il réapparaît si vous supprimez cet ouvrant.",
+          "disable_other_entities": "Désactive toutes les autres entités de l'appareil d'origine (par exemple les boutons « My Position » ou « Identifier » d'Overkiz, qui commandent le volet sans passer par cet ouvrant et lui font perdre sa position estimée). L'ouvrant d'origine reste actif : c'est lui qui reçoit les ordres. Attention : les capteurs de l'appareil (batterie, puissance…) sont aussi désactivés. Tout est réactivé si vous décochez l'option ou supprimez cet ouvrant."
+        },
+        "sections": {
+          "positions": {
+            "name": "Positions prédéfinies",
+            "description": "Une position prédéfinie crée un bouton qui amène l'ouvrant à une ouverture choisie (par exemple « Pare-soleil » à 40 %), rangé sous le même appareil. Il passe par cet ouvrant : la position estimée reste juste, contrairement à un bouton d'origine comme « My Position » d'Overkiz. Les positions deviennent aussi les favoris de la fenêtre de l'ouvrant, entre 0 % et 100 %. Au plus 8 positions.",
+            "data": {
+              "presets": "Positions"
+            },
+            "data_description": {
+              "presets": "« Ajouter » crée une ligne : un nom (par exemple « Pare-soleil »), un pourcentage et, si vous le voulez, une icône."
+            }
+          }
         }
       }
+    },
+    "error": {
+      "positions_invalides": "Chaque position prédéfinie doit avoir un nom et un pourcentage compris entre 0 et 100.",
+      "noms_en_double": "Deux positions portent le même nom.",
+      "trop_de_positions": "Au plus 8 positions prédéfinies."
     }
   },
   "selector": {
@@ -83,6 +119,22 @@
         "shade": "Store",
         "shutter": "Volet",
         "window": "Fenêtre"
+      }
+    },
+    "presets": {
+      "fields": {
+        "name": {
+          "name": "Nom du bouton",
+          "description": "Par exemple « Pare-soleil » ou « Chaleur »."
+        },
+        "position": {
+          "name": "Position",
+          "description": "Ouverture voulue en pourcentage, de 0 (fermé) à 100 (ouvert)."
+        },
+        "icon": {
+          "name": "Icône (facultative)",
+          "description": "Laissez vide pour l'icône par défaut."
+        }
       }
     }
   },

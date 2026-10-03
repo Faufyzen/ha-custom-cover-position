@@ -21,12 +21,14 @@ from homeassistant.config_entries import (
     OptionsFlow,
 )
 from homeassistant.core import callback
+from homeassistant.data_entry_flow import section
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import slugify
 from homeassistant.helpers.selector import (
     BooleanSelector,
     EntitySelector,
     EntitySelectorConfig,
+    ObjectSelector,
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
@@ -38,8 +40,13 @@ from homeassistant.helpers.selector import (
 
 from .const import (
     CONF_DEVICE_CLASS,
+    CONF_DISABLE_OTHERS,
     CONF_HIDE_SOURCE,
     CONF_NAME,
+    CONF_PRESET_ICON,
+    CONF_PRESET_NAME,
+    CONF_PRESET_POSITION,
+    CONF_PRESETS,
     CONF_SEND_STOP_AT_ENDS,
     CONF_SOURCE_ENTITY,
     CONF_SOURCE_ID,
@@ -48,6 +55,7 @@ from .const import (
     CONF_TRAVEL_TIME_DOWN,
     CONF_TRAVEL_TIME_UP,
     DEFAULT_DEVICE_CLASS,
+    DEFAULT_DISABLE_OTHERS,
     DEFAULT_HIDE_SOURCE,
     DEFAULT_SEND_STOP_AT_ENDS,
     DEFAULT_SUFFIX,
@@ -56,6 +64,8 @@ from .const import (
     DEFAULT_TRAVEL_TIME,
     DEVICE_CLASSES,
     DOMAIN,
+    MAX_PRESETS,
+    SECTION_POSITIONS,
 )
 
 
@@ -82,6 +92,74 @@ def _selecteur_type() -> SelectSelector:
             translation_key="device_class",
         )
     )
+
+
+def _selecteur_positions() -> ObjectSelector:
+    """Liste de positions prédéfinies : une ligne par position, avec « + » pour en ajouter."""
+    return ObjectSelector(
+        {
+            "multiple": True,
+            "label_field": CONF_PRESET_NAME,
+            "description_field": CONF_PRESET_POSITION,
+            "translation_key": "presets",
+            "fields": {
+                CONF_PRESET_NAME: {"required": True, "selector": {"text": {}}},
+                CONF_PRESET_POSITION: {
+                    "required": True,
+                    "selector": {
+                        "number": {"min": 0, "max": 100, "step": 1, "unit_of_measurement": "%"}
+                    },
+                },
+                CONF_PRESET_ICON: {"required": False, "selector": {"icon": {}}},
+            },
+        }
+    )
+
+
+def _bloc_positions(par_defaut: list[dict[str, Any]]) -> section:
+    """Bloc « Positions prédéfinies » du formulaire : un titre et une explication au-dessus de la liste."""
+    return section(
+        vol.Schema(
+            {vol.Optional(CONF_PRESETS, default=par_defaut): _selecteur_positions()}
+        ),
+        {"collapsed": False},
+    )
+
+
+def _positions_du_bloc(user_input: dict[str, Any]) -> list[dict[str, Any]] | None:
+    """Sort la liste du bloc (le bloc imbrique les données sous la clé SECTION_POSITIONS)."""
+    return (user_input.get(SECTION_POSITIONS) or {}).get(CONF_PRESETS)
+
+
+def _sans_bloc(user_input: dict[str, Any], positions: list[dict[str, Any]]) -> dict[str, Any]:
+    """Données à enregistrer : le bloc est remplacé par la liste de positions, à plat."""
+    donnees = {k: v for k, v in user_input.items() if k != SECTION_POSITIONS}
+    donnees[CONF_PRESETS] = positions
+    return donnees
+
+
+def _valider_positions(brutes: list[dict[str, Any]] | None) -> tuple[list[dict[str, Any]], str | None]:
+    """Nettoie la liste des positions ; renvoie (liste, clé d'erreur ou None)."""
+    propres: list[dict[str, Any]] = []
+    vus: set[str] = set()
+    if len(brutes or []) > MAX_PRESETS:
+        return [], "trop_de_positions"
+    for ligne in brutes or []:
+        nom = str(ligne.get(CONF_PRESET_NAME, "")).strip()
+        try:
+            position = round(float(ligne.get(CONF_PRESET_POSITION)))
+        except (TypeError, ValueError):
+            return [], "positions_invalides"
+        if not slugify(nom) or not 0 <= position <= 100:
+            return [], "positions_invalides"
+        if slugify(nom) in vus:
+            return [], "noms_en_double"
+        vus.add(slugify(nom))
+        nettoyee = {CONF_PRESET_NAME: nom, CONF_PRESET_POSITION: position}
+        if ligne.get(CONF_PRESET_ICON):
+            nettoyee[CONF_PRESET_ICON] = str(ligne[CONF_PRESET_ICON])
+        propres.append(nettoyee)
+    return propres, None
 
 
 def _nom_propose(nom_source: str) -> str:
@@ -139,8 +217,11 @@ class TimedCoverConfigFlow(ConfigFlow, domain=DOMAIN):
         assert self._source is not None
         erreurs: dict[str, str] = {}
         if user_input is not None:
+            positions, erreur_positions = _valider_positions(_positions_du_bloc(user_input))
             if user_input[CONF_TAKE_OVER] and not slugify(user_input[CONF_SOURCE_SUFFIX]):
                 erreurs[CONF_SOURCE_SUFFIX] = "suffixe_invalide"
+            elif erreur_positions:
+                erreurs[SECTION_POSITIONS] = erreur_positions
             else:
                 entree = er.async_get(self.hass).async_get(self._source)
                 return self.async_create_entry(
@@ -148,13 +229,14 @@ class TimedCoverConfigFlow(ConfigFlow, domain=DOMAIN):
                     data={
                         CONF_SOURCE_ENTITY: self._source,
                         CONF_SOURCE_ID: entree.id if entree is not None else None,
-                        **user_input,
+                        **_sans_bloc(user_input, positions),
                     },
                 )
 
         etat = self.hass.states.get(self._source)
         nom_source = etat.name if etat is not None else self._source
         saisi = user_input or {}
+        positions_saisies = (saisi.get(SECTION_POSITIONS) or {}).get(CONF_PRESETS, [])
         schema = vol.Schema(
             {
                 vol.Required(
@@ -172,6 +254,12 @@ class TimedCoverConfigFlow(ConfigFlow, domain=DOMAIN):
                 ): BooleanSelector(),
                 vol.Required(CONF_DEVICE_CLASS, default=DEFAULT_DEVICE_CLASS): _selecteur_type(),
                 vol.Required(CONF_HIDE_SOURCE, default=DEFAULT_HIDE_SOURCE): BooleanSelector(),
+                vol.Required(
+                    CONF_DISABLE_OTHERS, default=DEFAULT_DISABLE_OTHERS
+                ): BooleanSelector(),
+                vol.Optional(
+                    SECTION_POSITIONS, default={CONF_PRESETS: positions_saisies}
+                ): _bloc_positions(positions_saisies),
                 vol.Required(
                     CONF_TAKE_OVER, default=saisi.get(CONF_TAKE_OVER, DEFAULT_TAKE_OVER)
                 ): BooleanSelector(),
@@ -204,10 +292,18 @@ class TimedCoverOptionsFlow(OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Formulaire unique d'options."""
+        erreurs: dict[str, str] = {}
         if user_input is not None:
-            return self.async_create_entry(data=user_input)
+            positions, erreur_positions = _valider_positions(_positions_du_bloc(user_input))
+            if erreur_positions:
+                erreurs[SECTION_POSITIONS] = erreur_positions
+            else:
+                return self.async_create_entry(data=_sans_bloc(user_input, positions))
 
         actuel = {**self.config_entry.data, **self.config_entry.options}
+        positions_actuelles = (
+            _positions_du_bloc(user_input) if user_input is not None else actuel.get(CONF_PRESETS)
+        ) or []
         schema = vol.Schema(
             {
                 vol.Required(
@@ -230,6 +326,15 @@ class TimedCoverOptionsFlow(OptionsFlow):
                     CONF_HIDE_SOURCE,
                     default=actuel.get(CONF_HIDE_SOURCE, DEFAULT_HIDE_SOURCE),
                 ): BooleanSelector(),
+                vol.Required(
+                    CONF_DISABLE_OTHERS,
+                    default=actuel.get(CONF_DISABLE_OTHERS, DEFAULT_DISABLE_OTHERS),
+                ): BooleanSelector(),
+                # La valeur par défaut du bloc doit porter la liste : l'interface n'applique pas
+                # les valeurs par défaut des champs situés à l'intérieur d'un bloc.
+                vol.Optional(
+                    SECTION_POSITIONS, default={CONF_PRESETS: positions_actuelles}
+                ): _bloc_positions(positions_actuelles),
             }
         )
-        return self.async_show_form(step_id="init", data_schema=schema)
+        return self.async_show_form(step_id="init", data_schema=schema, errors=erreurs)

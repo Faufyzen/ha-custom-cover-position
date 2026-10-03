@@ -8,7 +8,7 @@ Le nouvel ouvrant **se range sous l'appareil existant** : un seul appareil par o
 Il peut aussi **reprendre le nom et l'identifiant de l'ouvrant d'origine** : les scripts et
 automatisations existants l'utilisent alors sans modification.
 
-> **État : version 0.2.0, en développement.** Testée dans une instance Home Assistant 2026.9.4 de test avec
+> **État : version 0.3.0, en développement.** Testée dans une instance Home Assistant 2026.9.4 de test avec
 > de faux ouvrants ; pas encore utilisée en production.
 
 ## Ce que l'on obtient
@@ -40,6 +40,8 @@ roue dentée de l'ouvrant ; la position actuelle est conservée.
 | Temps d'ouverture / de fermeture | Durée en secondes d'un trajet complet. |
 | Envoyer « stop » aux extrémités | Envoie un ordre d'arrêt même après une ouverture ou une fermeture complète. Laisser désactivé sauf besoin. |
 | Classe d'appareil | Les types de Home Assistant : volet, store, store vénitien, auvent, rideau, porte, portail, garage, clapet, fenêtre. |
+| Désactiver les autres entités de l'appareil d'origine | Désactivé par défaut. Désactive tout sauf l'ouvrant d'origine (par exemple les boutons « My Position » d'Overkiz, qui commandent le volet sans passer par l'ouvrant et lui font perdre sa position estimée). Attention : les capteurs de l'appareil sont désactivés aussi. Tout est réactivé si l'option est décochée ou l'ouvrant supprimé. |
+| Positions prédéfinies | Une liste (nom, pourcentage, icône facultative ; 8 au plus). Chaque ligne crée un bouton rangé sous l'appareil d'origine, nommé « <ouvrant> <position> », qui amène l'ouvrant à cette position. Les positions deviennent aussi les favoris de la fenêtre de l'ouvrant : « 0, vos positions, 100 » (sans position, les favoris par défaut restent ; une modification faite à la main dans la fenêtre est respectée jusqu'au prochain changement de la liste). |
 | Masquer l'ouvrant d'origine | L'original disparaît des écrans automatiques (il reste dans les listes de choix des scripts) ; il réapparaît si l'ouvrant est supprimé. |
 | Reprendre le nom et l'identifiant de l'ouvrant d'origine | Activé par défaut. Seulement à la création, et seulement si le nom saisi donne l'identifiant de l'original : l'original est renommé avec le suffixe choisi (`cover.volet_cuisine_origine`), le nouvel ouvrant prend `cover.volet_cuisine`. À la suppression, tout est remis. Désactivé : le nouvel ouvrant reçoit un autre identifiant (`cover.volet_cuisine_2`). |
 | Suffixe de l'ouvrant d'origine | Ajouté au nom et à l'identifiant de l'original quand il est renommé (« origine » en français, « source » sinon). |

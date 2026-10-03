@@ -74,6 +74,8 @@ def verifier(nom: str, condition: bool, detail: str = "") -> None:
 
 def creer_volet(cle: str, source: str, nom: str | None = None, **reglages) -> str:
     """Crée un ouvrant à position estimée par les étapes de configuration ; renvoie son entry_id."""
+    if "presets" in reglages:  # le formulaire range la liste dans le bloc « positions »
+        reglages["positions"] = {"presets": reglages.pop("presets")}
     flux = api("POST", "/api/config/config_entries/flow", {"handler": "timed_cover"})
     flux = api("POST", f"/api/config/config_entries/flow/{flux['flow_id']}", {"source_entity": source})
     assert flux["step_id"] == "parametres", flux
@@ -114,6 +116,14 @@ def position(entity_id: str) -> int | None:
     return etat(entity_id)["attributes"].get("current_position")
 
 
+def favoris(entity_id: str):
+    """Favoris de la fenêtre de l'ouvrant (options du registre), ou None s'ils sont par défaut."""
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).parent))
+    from ws_registre import options_cover
+    return options_cover(entity_id).get("favorite_positions")
+
+
 def existe(entity_id: str) -> bool:
     try:
         etat(entity_id)
@@ -122,9 +132,14 @@ def existe(entity_id: str) -> bool:
         return False
 
 
+# Titres des seules entrées que ce script crée (et supprime) : les vrais ouvrants de la sandbox,
+# par exemple ceux d'Overkiz, ne doivent jamais être touchés.
+TITRES_ESSAI = {"Essai cuisine", "Essai couloir", "Essai salon", "Hall Window"}
+
+
 def nettoyer() -> None:
     for entree in api("GET", "/api/config/config_entries/entry"):
-        if entree["domain"] == "timed_cover":
+        if entree["domain"] == "timed_cover" and entree["title"] in TITRES_ESSAI:
             api("DELETE", f"/api/config/config_entries/entry/{entree['entry_id']}")
 
 
@@ -254,7 +269,7 @@ def main() -> int:
     flux = api(
         "POST",
         f"/api/config/config_entries/options/flow/{flux['flow_id']}",
-        {"travel_time_up": 20, "travel_time_down": 16, "send_stop_at_ends": True, "device_class": "blind", "hide_source": True},
+        {"travel_time_up": 20, "travel_time_down": 16, "send_stop_at_ends": True, "device_class": "blind", "hide_source": True, "disable_other_entities": False, "positions": {"presets": []}},
     )
     time.sleep(2.0)
     attrs = etat(cuisine)["attributes"]
@@ -303,6 +318,64 @@ def main() -> int:
     verifier("l'ouvrant d'origine garde son identifiant et son nom", existe(source) and etat(source)["attributes"].get("friendly_name") == "Hall Window" and "travel_time_up" not in etat(source)["attributes"])
     nettoyer()
     time.sleep(2.0)
+
+    print("\n14. Positions prédéfinies : un bouton par ligne, rangé sous l'appareil d'origine")
+    entree = creer_volet(
+        "couloir", source, nom="Hall Window",
+        presets=[{"name": "Chaleur", "position": 33}, {"name": "Pare-soleil", "position": 60}],
+    )
+    time.sleep(2.5)
+    verifier("les favoris de l'ouvrant deviennent 0, 33, 60, 100", favoris("cover.hall_window") == [0, 33, 60, 100], str(favoris("cover.hall_window")))
+    # Le formulaire rouvert doit annoncer la liste existante comme valeur par défaut du bloc.
+    f = api("POST", "/api/config/config_entries/options/flow", {"handler": entree})
+    bloc = next(c for c in f["data_schema"] if c["name"] == "positions")
+    api("DELETE", "/api/config/config_entries/options/flow/" + f["flow_id"])
+    noms = [p["name"] for p in (bloc.get("default") or {}).get("presets", [])]
+    verifier("rouvrir les réglages : la liste existante est reprise par le bloc", noms == ["Chaleur", "Pare-soleil"], str(noms))
+    chaleur, soleil = "button.hall_window_chaleur", "button.hall_window_pare_soleil"
+    verifier("les deux boutons existent", existe(chaleur) and existe(soleil))
+    if existe(chaleur):
+        nom_b = etat(chaleur)["attributes"].get("friendly_name")
+        verifier("nom du bouton = « Hall Window Chaleur »", nom_b == "Hall Window Chaleur", str(nom_b))
+        meme = modele(f"{{{{ device_id('{chaleur}') == device_id('{origine}') and device_id('{origine}') is not none }}}}")
+        verifier("le bouton est sous l'appareil d'origine", meme == "True", meme)
+        service("timed_cover", "set_known_position", entity_id=source, position=0)
+        service("button", "press", entity_id=chaleur)
+        time.sleep(1.0)
+        verifier("l'appui met l'ouvrant en mouvement", etat(source)["state"] == "opening", etat(source)["state"])
+        time.sleep(4.0)
+        verifier("l'ouvrant arrive à 33 % (3,3 s sur 10 s)", position(source) == 33, str(position(source)))
+        verifier("l'ouvrant d'origine a bien reçu les ordres (arrêté)", etat(origine)["state"] in ("open", "closed", "opening"), etat(origine)["state"])
+
+    print("\n15. Gestion des positions par les réglages")
+    def options(donnees: dict) -> dict:
+        f = api("POST", "/api/config/config_entries/options/flow", {"handler": entree})
+        return api("POST", f"/api/config/config_entries/options/flow/{f['flow_id']}", donnees)
+    base = {"travel_time_up": TEMPS_MONTEE, "travel_time_down": TEMPS_DESCENTE, "send_stop_at_ends": False,
+            "device_class": "shutter", "hide_source": True, "disable_other_entities": False}
+    res = options({**base, "positions": {"presets": [{"name": "A", "position": 10}, {"name": "a", "position": 20}]}})
+    verifier("deux positions de même nom refusées", res.get("errors", {}).get("positions") == "noms_en_double", str(res.get("errors")))
+    res = options({**base, "positions": {"presets": [{"name": f"P{i}", "position": i * 10} for i in range(9)]}})
+    verifier("plus de 8 positions refusées", res.get("errors", {}).get("positions") == "trop_de_positions", str(res.get("errors")))
+    try:
+        options({**base, "positions": {"presets": [{"name": "B", "position": 150}]}})
+        refusee = False
+    except RuntimeError as erreur:  # Home Assistant refuse lui-même la valeur (HTTP 400)
+        refusee = "too large" in str(erreur)
+    verifier("position hors de 0 à 100 refusée", refusee)
+    res = options({**base, "positions": {"presets": [{"name": "Pare-soleil", "position": 60, "icon": "mdi:weather-sunny"}]}})
+    time.sleep(3.0)
+    verifier("une position retirée : son bouton disparaît", not existe(chaleur) and existe(soleil))
+    verifier("l'icône choisie est appliquée au bouton", etat(soleil)["attributes"].get("icon") == "mdi:weather-sunny", str(etat(soleil)["attributes"].get("icon")))
+    verifier("les favoris de l'ouvrant suivent la position restante (0, 60, 100)", favoris(source) == [0, 60, 100], str(favoris(source)))
+    res = options({**base, "positions": {"presets": []}})
+    time.sleep(3.0)
+    verifier("sans position, les favoris par défaut reviennent", favoris(source) is None, str(favoris(source)))
+    res = options({**base, "positions": {"presets": [{"name": "Pare-soleil", "position": 60}]}})
+    time.sleep(3.0)
+    nettoyer()
+    time.sleep(2.5)
+    verifier("à la suppression, plus aucun bouton", not existe(soleil))
 
     echecs = [r for r in resultats if not r[1]]
     print(f"\nRésultat : {len(resultats) - len(echecs)}/{len(resultats)} vérifications réussies.")

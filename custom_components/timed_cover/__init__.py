@@ -16,6 +16,8 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.util import slugify
 
 from .const import (
+    CONF_DISABLE_OTHERS,
+    CONF_DISABLED_BY_US,
     CONF_HIDE_SOURCE,
     CONF_NAME,
     CONF_RESTORE,
@@ -23,6 +25,7 @@ from .const import (
     CONF_SOURCE_ID,
     CONF_SOURCE_SUFFIX,
     CONF_TAKE_OVER,
+    DEFAULT_DISABLE_OTHERS,
     DEFAULT_HIDE_SOURCE,
     DEFAULT_TAKE_OVER,
     DOMAIN,
@@ -31,7 +34,7 @@ from .source import id_source
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.COVER]
+PLATFORMS = [Platform.COVER, Platform.BUTTON]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -46,6 +49,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _echanger_les_noms(hass, entry)
     _regler_masquage_source(hass, entry)
+    _regler_autres_entites(hass, entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     # Quand les options changent (temps d'ouverture, etc.), on recharge l'entrée.
     entry.async_on_unload(entry.add_update_listener(_recharger_apres_modification))
@@ -136,12 +140,64 @@ def _regler_masquage_source(hass: HomeAssistant, entry: ConfigEntry) -> None:
         registre.async_update_entity(source.entity_id, hidden_by=None)
 
 
+def _regler_autres_entites(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Désactive (ou réactive) les autres entités de l'appareil de l'ouvrant d'origine.
+
+    Les entités d'origine autres que l'ouvrant (par exemple le bouton « My Position » d'Overkiz)
+    commandent le volet sans passer par notre ouvrant : s'en servir lui fait perdre sa position
+    estimée. L'ouvrant d'origine, lui, reste actif, car c'est par lui que partent les ordres.
+    On retient ce que l'on désactive pour ne réactiver que cela, et on ne touche pas à ce que
+    l'utilisateur a désactivé lui-même.
+    """
+    reglages = {**entry.data, **entry.options}
+    if not reglages.get(CONF_DISABLE_OTHERS, DEFAULT_DISABLE_OTHERS):
+        _reactiver_autres_entites(hass, entry)
+        return
+    registre = er.async_get(hass)
+    source = registre.async_get(id_source(hass, entry))
+    if source is None or source.device_id is None:
+        return
+    deja = list(entry.data.get(CONF_DISABLED_BY_US, []))
+    nouvelles: list[str] = []
+    for autre in er.async_entries_for_device(
+        registre, source.device_id, include_disabled_entities=True
+    ):
+        if (
+            autre.id == source.id
+            or autre.platform == DOMAIN
+            or autre.id in deja
+            or autre.disabled_by is not None
+        ):
+            continue
+        registre.async_update_entity(autre.entity_id, disabled_by=er.RegistryEntryDisabler.USER)
+        nouvelles.append(autre.id)
+    if nouvelles:
+        hass.config_entries.async_update_entry(
+            entry, data={**entry.data, CONF_DISABLED_BY_US: deja + nouvelles}
+        )
+
+
+def _reactiver_autres_entites(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Réactive les entités que l'intégration avait désactivées, et elles seulement."""
+    retenues = entry.data.get(CONF_DISABLED_BY_US)
+    if not retenues:
+        return
+    registre = er.async_get(hass)
+    for identifiant in retenues:
+        autre = registre.async_get(identifiant)
+        if autre is not None and autre.disabled_by is er.RegistryEntryDisabler.USER:
+            registre.async_update_entity(autre.entity_id, disabled_by=None)
+    hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_DISABLED_BY_US: []})
+
+
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """À la suppression : l'ouvrant d'origine retrouve son nom, son identifiant et sa visibilité.
+    """À la suppression : l'ouvrant d'origine retrouve son nom, son identifiant et sa visibilité,
+    et ses autres entités sont réactivées.
 
     On ne remet en état que ce que l'intégration avait elle-même changé : un nom ou un
     identifiant modifié depuis par l'utilisateur est respecté.
     """
+    _reactiver_autres_entites(hass, entry)
     registre = er.async_get(hass)
     source = registre.async_get(id_source(hass, entry))
     if source is None:
