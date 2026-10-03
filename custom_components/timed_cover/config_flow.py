@@ -116,13 +116,17 @@ def _selecteur_positions() -> ObjectSelector:
     )
 
 
-def _bloc_positions(par_defaut: list[dict[str, Any]]) -> section:
-    """Bloc « Positions prédéfinies » du formulaire : un titre et une explication au-dessus de la liste."""
+def _bloc_positions(par_defaut: list[dict[str, Any]], ouvert: bool) -> section:
+    """Bloc « Positions prédéfinies » du formulaire : un titre et une explication au-dessus de la liste.
+
+    Il est replié tant qu'aucune position n'existe (la plupart des ouvrants n'en ont pas), et
+    ouvert dès qu'il y en a, ou qu'une erreur l'exige.
+    """
     return section(
         vol.Schema(
             {vol.Optional(CONF_PRESETS, default=par_defaut): _selecteur_positions()}
         ),
-        {"collapsed": False},
+        {"collapsed": not ouvert},
     )
 
 
@@ -259,7 +263,9 @@ class TimedCoverConfigFlow(ConfigFlow, domain=DOMAIN):
                 ): BooleanSelector(),
                 vol.Optional(
                     SECTION_POSITIONS, default={CONF_PRESETS: positions_saisies}
-                ): _bloc_positions(positions_saisies),
+                ): _bloc_positions(
+                    positions_saisies, bool(positions_saisies) or SECTION_POSITIONS in erreurs
+                ),
                 vol.Required(
                     CONF_TAKE_OVER, default=saisi.get(CONF_TAKE_OVER, DEFAULT_TAKE_OVER)
                 ): BooleanSelector(),
@@ -334,7 +340,9 @@ class TimedCoverOptionsFlow(OptionsFlow):
                 # les valeurs par défaut des champs situés à l'intérieur d'un bloc.
                 vol.Optional(
                     SECTION_POSITIONS, default={CONF_PRESETS: positions_actuelles}
-                ): _bloc_positions(positions_actuelles),
+                ): _bloc_positions(
+                    positions_actuelles, bool(positions_actuelles) or SECTION_POSITIONS in erreurs
+                ),
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema, errors=erreurs)

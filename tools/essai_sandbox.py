@@ -124,6 +124,14 @@ def favoris(entity_id: str):
     return options_cover(entity_id).get("favorite_positions")
 
 
+def bloc_ouvert(entry_id: str) -> bool:
+    """Le bloc « positions » du formulaire de réglages est-il annoncé ouvert à l'interface ?"""
+    f = api("POST", "/api/config/config_entries/options/flow", {"handler": entry_id})
+    bloc = next(c for c in f["data_schema"] if c["name"] == "positions")
+    api("DELETE", "/api/config/config_entries/options/flow/" + f["flow_id"])
+    return bool(bloc["expanded"])
+
+
 def existe(entity_id: str) -> bool:
     try:
         etat(entity_id)
@@ -265,6 +273,7 @@ def main() -> int:
     verifier("position recalée à 70 sans mouvement", position(cuisine) == 70 and etat(cuisine)["state"] == "open", f"{position(cuisine)}")
 
     print("\n11. Modification des temps par le formulaire d'options")
+    verifier("sans position, le bloc « Positions prédéfinies » est replié", not bloc_ouvert(entrees["cuisine"]))
     flux = api("POST", "/api/config/config_entries/options/flow", {"handler": entrees["cuisine"]})
     flux = api(
         "POST",
@@ -332,6 +341,7 @@ def main() -> int:
     api("DELETE", "/api/config/config_entries/options/flow/" + f["flow_id"])
     noms = [p["name"] for p in (bloc.get("default") or {}).get("presets", [])]
     verifier("rouvrir les réglages : la liste existante est reprise par le bloc", noms == ["Chaleur", "Pare-soleil"], str(noms))
+    verifier("avec des positions, le bloc est ouvert", bloc_ouvert(entree))
     chaleur, soleil = "button.hall_window_chaleur", "button.hall_window_pare_soleil"
     verifier("les deux boutons existent", existe(chaleur) and existe(soleil))
     if existe(chaleur):
@@ -376,6 +386,20 @@ def main() -> int:
     nettoyer()
     time.sleep(2.5)
     verifier("à la suppression, plus aucun bouton", not existe(soleil))
+
+    print("\n16. Diagnostic de l'ouvrant (Télécharger les diagnostics)")
+    entree = creer_volet("cuisine", SOURCES["cuisine"])
+    time.sleep(2.5)
+    diag = api("GET", f"/api/diagnostics/config_entry/{entree}")
+    d = diag.get("data", {})
+    verifier("le diagnostic existe et donne la version", d.get("versions", {}).get("integration") is not None, str(d.get("versions")))
+    verifier("il contient la configuration (temps d'ouverture)", d.get("config_entry", {}).get("data", {}).get("travel_time_up") == TEMPS_MONTEE)
+    verifier("il contient l'état de l'ouvrant", (d.get("cover", {}).get("state") or {}).get("state") is not None, str((d.get("cover", {}).get("state") or {}).get("state")))
+    verifier("il contient l'ouvrant d'origine et son registre", (d.get("source_cover", {}).get("registry") or {}).get("entity_id") == SOURCES["cuisine"])
+    verifier("les noms de champs du diagnostic sont sans accent", all(k.isascii() for k in d.keys()) and all(k.isascii() for k in d["config_entry"].keys()), str(list(d.keys())))
+    verifier("aucun secret dans le diagnostic", not any(m in json.dumps(diag).lower() for m in ("password", "token", "bearer")))
+    nettoyer()
+    time.sleep(2.0)
 
     echecs = [r for r in resultats if not r[1]]
     print(f"\nRésultat : {len(resultats) - len(echecs)}/{len(resultats)} vérifications réussies.")

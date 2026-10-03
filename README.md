@@ -71,6 +71,15 @@ python3 tools/essai_sandbox.py                    # scénarios complets sur la V
 Les scénarios utilisent l'intégration `demo` de Home Assistant comme faux volets. Les outils supposent la
 VM de test décrite dans le projet de contexte (`projet-ha-sandbox`) et un jeton dans `~/.ha-sandbox-token`.
 
+## Icône
+
+L'icône est dans `custom_components/timed_cover/brand/` : `icon.png` (256 × 256) et `icon@2x.png`
+(512 × 512), fond transparent. Home Assistant la sert pour la carte et la page de l'intégration, avec
+`dark_icon.png` et `logo.png` en repli sur `icon.png`. Elle n'apparaît qu'après un **redémarrage** de
+Home Assistant (l'intégration doit déclarer son dossier `brand` au chargement), et le navigateur la garde en
+cache : un rechargement forcé de la page peut être nécessaire. Le dessin source, modifiable (Inkscape),
+est `assets/icon-source.svg`.
+
 ## Licence
 
 MIT. Le principe (position proportionnelle au temps écoulé) est celui de la famille d'intégrations
