@@ -1,208 +1,266 @@
 # Custom Cover Position
 
-<img src="custom_components/timed_cover/brand/icon.png" alt="Icône de Custom Cover Position" width="96" align="right">
+🇬🇧 **English** · 🇫🇷 [Français](README.fr.md)
 
-**Donnez une position à vos volets, stores, portails… qui ne savent pas où ils en sont.**
+<img src="custom_components/timed_cover/brand/icon.png" alt="Custom Cover Position icon" width="96" align="right">
 
-Custom Cover Position est une intégration Home Assistant qui **estime l'état et la position d'une entité « cover »** à partir du temps qu'elle met à s'ouvrir et à se fermer. Elle est faite pour les volets qui ne renvoient pas leur position, comme les volets roulants Somfy RTS.
+**Give a position to your shutters, blinds, gates… that do not know where they are.**
 
-Elle s'inspire de deux projets : [cover_rf_time_based](https://github.com/davidramosweb/home-assistant-custom-components-cover-time-based) de davidramosweb, et [ha-cover-time-based](https://github.com/Sese-Schneider/ha-cover-time-based) de Sese-Schneider (licence MIT). Le principe, estimer la position d'après le temps écoulé, vient d'eux. Le code de cette intégration est écrit à neuf, avec une configuration entièrement faite par l'interface, sans fichier YAML.
+Custom Cover Position is a Home Assistant integration that **estimates the state and position of cover entities** from the time they take to open and close, and lets you set up preset positions with a few clicks. It is especially useful for shutters that do not report their position, such as Somfy RTS roller shutters.
 
-[![Ouvrir dans HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Faufyzen&repository=ha-custom-cover-position&category=integration)
+It is inspired by two projects: [cover_rf_time_based](https://github.com/davidramosweb/home-assistant-custom-components-cover-time-based) by davidramosweb, for estimating the position of a cover entity from the elapsed time, and [ha-cover-time-based](https://github.com/Sese-Schneider/ha-cover-time-based) by Sese-Schneider (MIT license), for a configuration made entirely through the interface, with no YAML file.
 
-**[Pourquoi](#pourquoi)** · **[Installation](#installation)** · **[Configuration](#configuration)** · **[Entités et noms](#entités-et-noms)** · **[Recaler la position](#recaler-la-position)** · **[Dépannage](#dépannage)** · **[Besoin d'aide ou signaler un bug](#besoin-daide-ou-signaler-un-bug)** · **[Limites](#limites)** · **[Langues](#langues-et-documentation)**
+[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Faufyzen&repository=ha-custom-cover-position&category=integration)
 
-> 📷 **Capture à ajouter** : la fenêtre d'une entité avec ses pastilles de position (0 %, 33 %, 55 %, 100 %) et son curseur.
+**[Why](#why)** · **[Installation](#installation)** · **[Configuration](#configuration)** · **[Entities and names](#entities-and-names)** · **[Resetting the position](#resetting-the-position)** · **[Troubleshooting](#troubleshooting)** · **[Need help or want to report a bug](#need-help-or-want-to-report-a-bug)** · **[Limitations](#limitations)** · **[Languages](#languages-and-documentation)**
 
-## Pourquoi
 
-Un volet piloté par une télécommande radio (Somfy RTS, par exemple) reçoit des ordres mais **ne renvoie rien** : Home Assistant ne sait ni s'il est ouvert, ni à quel pourcentage. Son état reste « inconnu », et l'on ne peut pas lui demander « 40 % ».
+## Why
 
-Cette intégration crée, à côté de l'entité existante (l'**entité source**), une **entité personnalisée** qui :
+A shutter driven by a radio remote (Somfy RTS, for example) receives commands but **reports nothing back**: Home Assistant does not know whether it is open, closed or somewhere in between. Its state stays "unknown", and you cannot ask it to close or open by "40%".
 
-- **connaît son état** : ouvert, fermé, en cours d'ouverture, en cours de fermeture ;
-- **calcule sa position** (de 0 % à 100 %) d'après le temps écoulé depuis la dernière commande ;
-- **va à la position demandée** : elle envoie l'ouverture ou la fermeture, puis l'arrêt à l'instant calculé ;
-- **se lie à l'appareil de l'entité source** : pas de doublon dans la liste de vos appareils ;
-- **reprend le nom et l'identifiant de l'entité source** : vos scripts et automatisations continuent de fonctionner sans modification ;
-- **crée des boutons de positions prédéfinies** (« Pare-soleil », « Chaleur »…) et peut **désactiver les entités de l'appareil source** qui feraient perdre le suivi de position.
+This integration creates, next to the existing entity (the **source entity**), a **custom cover entity** that:
 
-La position est une **estimation** : elle suppose que le volet met toujours le même temps. Voir [Limites](#limites).
+- **knows its state**: open, closed, opening, closing;
+- **calculates its position** (from 0% to 100%) from the time elapsed since the last command;
+- **goes to the requested position**: it sends the open or close command, then the stop command at the calculated moment;
+- **links itself to the device of the source entity**: no duplicate in your device list, and nothing to create by hand in Helpers or in the configuration.yaml and templates.yaml files;
+- **takes over the name and identifier of the source entity**: your scripts and automations keep working without any change;
+- **creates preset position buttons** ("Sun shade", "Heat"…) and can **disable the entities of the source device** that would make it lose track of the position.
 
-## Compatibilité
+The position is an **estimate**: it assumes that the shutter always takes the same time to close or open. See [Limitations](#limitations).
 
-- **Home Assistant 2026.9 ou plus récent.** L'intégration est testée avec la version 2026.9.4.
-- **Toute entité `cover` qui sait s'ouvrir, se fermer et s'arrêter** : volets roulants, stores, stores bannes, rideaux, portails, portes de garage, fenêtres…
-- Exemple d'usage : des volets Somfy RTS commandés par Home Assistant, via l'intégration qui les fournit (Overkiz, par exemple).
+## Compatibility
+
+- **Home Assistant 2026.9 or newer.** The integration is tested with version 2026.9.4.
+- **Any `cover` entity that can open, close and stop**: roller shutters, blinds, awnings, curtains, gates, garage doors, windows…
+- Example: Somfy RTS shutters controlled by Home Assistant through the integration that provides them (Overkiz, for example).
 
 ## Installation
 
 <details>
-<summary><b>Avec HACS (recommandé)</b></summary>
+<summary><b>With HACS (recommended)</b></summary>
 
 <br>
 
-Cette méthode vous permet de recevoir les mises à jour directement dans HACS.
+This method lets you receive updates directly in HACS.
 
-1. Si HACS n'est pas encore installé, suivez [son guide d'installation](https://www.hacs.xyz/docs/use/download/download/).
-2. Ouvrez HACS dans la barre latérale de Home Assistant.
-3. Cliquez sur les trois points en haut à droite, puis sur **Dépôts personnalisés**.
-4. Collez l'adresse du dépôt : `https://github.com/Faufyzen/ha-custom-cover-position`
-5. Choisissez le type **Intégration**, puis cliquez sur **Ajouter**.
-6. Cherchez **Custom Cover Position** dans HACS et cliquez sur **Télécharger**.
-7. **Redémarrez Home Assistant** (Paramètres → Système → bouton d'alimentation en haut à droite → Redémarrer).
-
-Le bouton bleu en haut de cette page fait les étapes 3 à 5 pour vous.
-
-> 📷 **Capture à ajouter** : le menu « Dépôts personnalisés » de HACS et la fenêtre d'ajout, avec l'adresse du dépôt et le type « Intégration ».
+1. In HACS, click the three dots at the top right, then **Custom repositories**.
+2. Paste the repository address: `https://github.com/Faufyzen/ha-custom-cover-position`
+3. Choose the type **Integration**, then click **Add**.
+4. Search for **Custom Cover Position** in HACS and click **Download**.
+5. **Restart Home Assistant**.
 
 </details>
 
 <details>
-<summary><b>Sans HACS (manuelle)</b></summary>
+<summary><b>Without HACS (manual)</b></summary>
 
 <br>
 
-1. Téléchargez ce dépôt (bouton vert **Code**, puis **Download ZIP**) et décompressez-le.
-2. Copiez le dossier `custom_components/timed_cover` dans le dossier `custom_components` de votre configuration Home Assistant, à côté de `configuration.yaml`. Créez `custom_components` s'il n'existe pas. L'éditeur *Studio Code Server* ou le partage de fichiers *Samba* permettent de le faire.
-3. **Redémarrez Home Assistant.**
-
-Après chaque mise à jour faite à la main, redémarrez à nouveau Home Assistant.
+1. Download this repository (green **Code** button, then **Download ZIP**) and unzip it.
+2. Copy the `custom_components/timed_cover` folder into the `config/custom_components` folder of your Home Assistant configuration.
+3. **Restart Home Assistant.**
 
 </details>
 
-L'icône de l'intégration n'apparaît qu'après un redémarrage, et votre navigateur peut garder l'ancienne image en cache : un rechargement forcé de la page (⌘⇧R ou Ctrl+Maj+R) règle cela.
+The integration icon only shows after a restart, and your browser may keep the old image in its cache: a hard refresh of the page (⌘⇧R or Ctrl+Shift+R) fixes this.
 
-### Désinstallation
+### Uninstalling
 
-Supprimez d'abord chaque entité personnalisée (Paramètres → Appareils et services → Custom Cover Position → menu ⋮ de l'entité → **Supprimer**) : l'intégration remet alors les noms, la visibilité et les entités de l'appareil source dans leur état de départ. Supprimez ensuite l'intégration dans HACS (ou le dossier `custom_components/timed_cover`) et redémarrez Home Assistant.
+First delete every custom cover entity (Settings → Devices & services → Custom Cover Position → ⋮ menu of the entity → **Delete**): the integration then puts the names, visibility and entities of the source device back as they were. Then remove the integration in HACS (or the `custom_components/timed_cover` folder) and restart Home Assistant.
 
 ## Configuration
 
-Tout se règle dans une fenêtre de configuration, en deux étapes.
+Everything is set in a configuration window, in two steps.
 
-1. Allez dans **Paramètres → Appareils et services**.
-2. La première fois, cliquez sur **Ajouter une intégration** et cherchez **Custom Cover Position**. Ensuite, la carte de l'intégration apparaît : son bouton **Ajouter une entité** suffit.
-3. **Étape 1 : sélectionnez l'entité source**, celle dont vous voulez estimer la position (par exemple `cover.volet_cuisine`). Elle doit déjà exister dans Home Assistant.
-4. **Étape 2 : remplissez les réglages** du tableau ci-dessous, puis validez.
+1. Go to **Settings → Devices & services**.
+2. The first time, click **Add integration** and search for **Custom Cover Position**. After that, the integration card appears: its **Add a cover entity** button is enough.
 
-> 📷 **Capture à ajouter** : l'étape 1 (choix de l'entité), et le haut du formulaire de l'étape 2.
+<p align="center">
+  <img src="docs/images/add-integration-search.png" alt="The Select brand window with Custom Cover Position found by the search" width="640">
+</p>
 
-| Réglage | Rôle |
+3. **Step 1: select the source entity**, the one whose position you want to estimate (for example `cover.bedroom_shutter`). It must already exist in Home Assistant.
+
+<table align="center">
+  <tr>
+    <td><img src="docs/images/step1-choose-source-entity.png" alt="Step 1: Choose the source entity, with the entity selection field" width="320"></td>
+    <td><img src="docs/images/step1-entity-list.png" alt="The list of cover entities offered as the source entity" width="320"></td>
+  </tr>
+</table>
+
+4. **Step 2: fill in the settings** from the table below, then submit.
+
+| Setting | Purpose |
 | --- | --- |
-| Nom de l'entité | Le nom affiché. L'identifiant en est déduit : « Volet Salon 1 » donne `cover.volet_salon_1`. |
-| Délai d'ouverture, Délai de fermeture | Durée en secondes d'un trajet complet (voir [Mesurer les délais](#mesurer-les-délais)). |
-| Envoyer « stop » aux extrémités | Envoie une commande d'arrêt même après une ouverture ou une fermeture complète. À laisser désactivé, sauf si votre volet ne s'arrête pas tout seul en fin de course. |
-| Classe d'appareil | Le type d'équipement (volet, store, store vénitien, auvent, rideau, porte, portail, garage, clapet, fenêtre) : il détermine l'icône. |
-| Masquer l'entité source | L'entité source disparaît des écrans automatiques de Home Assistant, pour ne pas l'utiliser par erreur. Voir [Entités et noms](#entités-et-noms). Activé par défaut. |
-| Désactiver les autres entités de l'appareil source | Désactive tout sauf l'entité source, par exemple les boutons « My Position ». Voir [Entités et noms](#entités-et-noms). Désactivé par défaut. |
-| Positions prédéfinies | Une liste de boutons qui amènent le volet à un pourcentage choisi. Voir [Positions prédéfinies](#positions-prédéfinies). |
-| Reprendre le nom et l'identifiant de l'entité source | L'entité personnalisée prend le nom et l'identifiant de l'entité source, qui est renommée. Voir [Entités et noms](#entités-et-noms). Activé par défaut. |
-| Suffixe pour l'entité source | Ajouté au nom et à l'identifiant de l'entité source quand elle est renommée. « source » par défaut. |
+| Entity name | The displayed name. The identifier is derived from it: "Bedroom Shutter" gives `cover.bedroom_shutter`. |
+| Time to open, Time to close | Duration in seconds of a complete trip (see [Measuring the times](#measuring-the-times)). |
+| Send "stop" at the ends | Sends a stop command even after a complete opening or closing. Leave it off unless your shutter does not stop by itself at the end of its travel. |
+| Device class | The type of equipment (shutter, blind, venetian blind, awning, curtain, door, gate, garage, damper, window): it determines the icon. |
+| Hide the source entity | The source entity disappears from Home Assistant's automatic screens, so that it is not used by mistake. See [Entities and names](#entities-and-names). On by default. |
+| Disable the other entities of the source device | Disables everything except the source entity, for example the "My Position" buttons. See [Entities and names](#entities-and-names). Off by default. |
+| Preset positions | A list of buttons that bring the shutter to a chosen percentage. See [Preset positions](#preset-positions). |
+| Take over the name and identifier of the source entity | The custom cover entity takes the name and identifier of the source entity, which is renamed. See [Entities and names](#entities-and-names). On by default. |
+| Suffix for the source entity | Added to the name and identifier of the source entity when it is renamed. "source" by default. |
 
-### Mesurer les délais
 
-Les deux délais sont la seule chose que l'intégration ne peut pas deviner. Chronométrez, avec la télécommande ou l'application d'origine :
+<table align="center">
+  <tr>
+    <td><img src="docs/images/step2-settings-top.png" alt="Step 2, top of the form: name, time to open and close, stop at the ends, device class" width="320"></td>
+    <td><img src="docs/images/step2-settings-bottom.png" alt="Step 2, bottom of the form: hide the source entity, disable the other entities, preset positions, take over the name, suffix" width="320"></td>
+  </tr>
+</table>
 
-1. **Délai d'ouverture** : le volet est fermé ; lancez l'ouverture complète et notez le temps jusqu'à l'arrêt.
-2. **Délai de fermeture** : le volet est ouvert ; lancez la fermeture complète et notez le temps.
+### Measuring the times
 
-Les deux durées sont souvent différentes (un volet monte plus lentement qu'il ne descend). Pour affiner plus tard, demandez 50 % : si le volet s'arrête trop haut ou trop bas, corrigez le délai de quelques dixièmes de seconde.
+The two times are the only thing the integration cannot guess. Time them with your remote or the original app:
 
-### Positions prédéfinies
+1. **Time to open**: the shutter is closed; start a complete opening and note the time until it stops.
+2. **Time to close**: the shutter is open; start a complete closing and note the time.
 
-Une position prédéfinie est un **bouton** qui amène le volet à un pourcentage choisi. Les boutons d'origine comme « My Position » (Somfy) commandent le volet **sans passer par l'entité personnalisée** : elle perd alors le suivi de sa position. Les boutons de cette intégration, eux, passent par l'entité personnalisée, donc la position reste juste.
+The two durations are often different (a shutter goes up more slowly than it comes down). To fine-tune later, ask for 50%: if the shutter stops too high or too low, correct the time by a few tenths of a second.
 
-Dans le bloc **Positions prédéfinies**, cliquez sur **Ajouter**, puis donnez un **nom** (« Pare-soleil »), une **position** de 0 à 100 % et, si vous le voulez, une **icône**. Chaque ligne crée un bouton « <nom de l'entité> <nom de la position> » sous le même appareil, par exemple « Volet Salon 2 Pare-soleil ». On peut créer **8 positions au maximum**.
+### Preset positions
 
-> 📷 **Capture à ajouter** : le bloc « Positions prédéfinies » avec deux lignes, et la fenêtre « Ajouter » (nom, position, icône).
+A preset position is a **button** that brings the shutter to a chosen percentage. The original buttons such as "My Position" (Somfy) command the shutter **without going through the custom cover entity**: it then loses track of its position. The buttons of this integration do go through the custom cover entity, so the position stays right.
 
-**Les favoris de la fenêtre de l'entité.** Quand vous cliquez sur une entité, Home Assistant affiche des pastilles de position sous le curseur (« 0 % », « 25 % », « 75 % », « 100 % » par défaut). Avec des positions prédéfinies, l'intégration les remplace par **0 %, vos positions, 100 %** : un bouton « Chaleur » à 33 % et un bouton « Soleil » à 55 % donnent 0 %, 33 %, 55 % et 100 %. Sans position prédéfinie, les pastilles par défaut restent. Si vous les modifiez à la main (menu ⋮ → Modifier les favoris), votre choix est respecté jusqu'au prochain changement de la liste.
+In the **Preset positions** block, click **Add**, then give a **name** ("Sun shade"), a **position** from 0 to 100% and, if you like, an **icon**. Each row creates a "<entity name> <position name>" button under the same device, for example "Bedroom Shutter Sun shade". You can create **at most 8 positions**.
 
-### Modifier un réglage plus tard
+<table align="center">
+  <tr>
+    <td><img src="docs/images/presets-block-empty.png" alt="The Preset positions block, open, with its explanation and the Add button" width="320"></td>
+    <td><img src="docs/images/presets-add-dialog.png" alt="The Add window: button name, position in percent and optional icon" width="320"></td>
+    <td><img src="docs/images/presets-block-filled.png" alt="The block with two positions, Sun at 60% and Heat at 33%, each with its pencil and trash can" width="320"></td>
+  </tr>
+</table>
 
-Chaque réglage reste modifiable (sauf le nom, l'échange des noms et le suffixe, qui ne se choisissent qu'à la création) : positions à ajouter, modifier ou supprimer, délais, options. Les réglages se trouvent dans **l'intégration Custom Cover Position**, et **non** dans l'intégration de l'appareil source (Overkiz, par exemple), même si l'entité personnalisée est rattachée à l'appareil de l'entité source :
+This affects **the favorites in the entity dialog.** When you click an entity, Home Assistant shows position chips under the slider ("0%", "25%", "75%", "100%" by default). With preset positions, the integration replaces them with **0%, your positions, 100%**: a "Heat" button at 33% and a "Sun" button at 60% give 0%, 33%, 60% and 100%, as in the image below. Without any preset position, the default chips stay. If you edit them by hand (⋮ menu → Edit favorites), your choice is kept until the list changes again.
 
-1. **Paramètres → Appareils et services**, carte **Custom Cover Position**.
-2. Cliquez sur la **roue dentée** de l'entité concernée.
-3. Modifiez ce que vous voulez et validez : la position actuelle est conservée.
+<table align="center">
+  <tr>
+    <td align="center"><b>Before</b><br><img src="docs/images/source-entity-unknown.png" alt="A shutter entity whose state is Unknown, with only three buttons: up, stop, down" width="320"></td>
+    <td align="center"><b>or</b><br><img src="docs/images/entity-favorites-custom.png" alt="The entity dialog afterwards, with its position chips: 0%, 33%, 60% and 100%" width="320"></td>
+  </tr>
+</table>
 
-Chaque position prédéfinie a son crayon et sa corbeille ; supprimer une ligne supprime son bouton.
+Once submitted, a message confirms that the entity was created.
 
-## Entités et noms
+<p align="center">
+  <img src="docs/images/success.png" alt="The message Created configuration for Bedroom Shutter with the Finish button" width="320">
+</p>
 
-### Ce que l'intégration crée
+### Changing a setting later
 
-- **Une entité `cover`** (l'entité personnalisée), avec le nom et l'identifiant que vous avez choisis. Elle expose les attributs `travel_time_up` et `travel_time_down` (les délais, en secondes), `source_entity` (l'entité source) et, pendant un déplacement, `target_position`.
-- **Un bouton par position prédéfinie.**
+Every setting can still be changed (except the name, the name exchange and the suffix, which can only be chosen at creation): positions to add, edit or delete, times, options. The settings are in **the Custom Cover Position integration**, and **not** in the integration of the source device (Overkiz, for example), even though the custom cover entity is attached to the device of the source entity:
 
-Elle est **indisponible** quand l'entité source l'est. L'état « inconnu » de l'entité source, normal pour des volets sans retour d'état, ne la rend pas indisponible. Au redémarrage de Home Assistant, la dernière position est restaurée.
+1. **Settings → Devices & services**, **Custom Cover Position** card.
+2. Click the **gear** of the entity concerned.
+3. Change what you want and submit: the current position is kept.
 
-### Échange des noms
+<p align="center">
+  <img src="docs/images/integration-page.png" alt="The Custom Cover Position integration page: the Add a cover entity button, and the Bedroom Shutter entity with its gear" width="640">
+</p>
 
-L'entité source s'appelle souvent comme vous voulez nommer l'entité personnalisée (par exemple `cover.volet_cuisine`). Par défaut, l'intégration **échange les noms** :
+Each preset position has its own pencil and trash can; deleting a row deletes its button.
 
-- l'entité source est renommée avec le suffixe choisi : « Volet Cuisine (source) », `cover.volet_cuisine_source` ;
-- l'entité personnalisée prend le nom et l'identifiant que portait l'entité source : `cover.volet_cuisine`.
+## Entities and names
 
-Vos scripts, automatisations et tableaux de bord qui utilisent `cover.volet_cuisine` utilisent donc l'entité personnalisée, **sans aucune modification**. L'échange n'a lieu que si le nom que vous saisissez donne l'identifiant de l'entité source, et seulement à la création. Si vous désactivez l'option, l'entité personnalisée reçoit un autre identifiant (`cover.volet_cuisine_2`) et vos scripts devront être modifiés pour l'utiliser.
+### What the integration creates
 
-**À la suppression de l'entité personnalisée, tout est remis** : l'entité source retrouve son nom et son identifiant. Ce que vous avez changé depuis est respecté.
+- **One `cover` entity** (the custom cover entity), with the name and identifier you chose. It exposes the attributes `travel_time_up` and `travel_time_down` (the times, in seconds), `source_entity` (the source entity) and, while moving, `target_position`.
+- **One button per preset position.**
 
-### Masquer et désactiver
+It is **unavailable** when the source entity is. The "unknown" state of the source entity, which is normal for shutters that report no state, does not make it unavailable. When Home Assistant restarts, the last position is restored.
 
-- **Masquer l'entité source** la retire des écrans générés automatiquement, pour ne pas l'utiliser par erreur. Elle reste utilisée en interne pour envoyer les commandes, et elle reste proposée dans les listes de choix des scripts (Home Assistant ne permet pas de l'en retirer).
-- **Désactiver les autres entités de l'appareil source** désactive tout sauf l'entité source, par exemple les boutons « My Position » ou « Identifier » d'une intégration Somfy. Attention : les **capteurs** de l'appareil (batterie, puissance…) sont désactivés aussi, c'est pourquoi l'option est désactivée par défaut. Tout est réactivé si vous la décochez ou si vous supprimez l'entité personnalisée.
+### Name exchange
 
-> 📷 **Capture à ajouter** : la page de l'appareil, avec l'entité personnalisée, ses boutons de positions et la mention « entités désactivées ».
+The source entity is often named the way you want to name the custom cover entity (for example `cover.bedroom_shutter`). By default, the integration offers to **take over the name** of the source entity:
 
-## Recaler la position
+- the source entity is renamed with the chosen suffix: "Bedroom Shutter (source)", `cover.bedroom_shutter_source`;
+- the custom cover entity takes the name and identifier the source entity had: `cover.bedroom_shutter`.
 
-La position est estimée : une commande faite avec la télécommande d'origine, à la main ou après une coupure de courant peut la faire **dériver**. Deux façons de la remettre d'équerre :
+Your scripts, automations and dashboards that already use `cover.bedroom_shutter` therefore use the custom cover entity, **without any change** on your side. The exchange only happens if you keep the name of the source entity that appears by default in the **Entity name** field when you create the custom cover entity. If you turn the option off, the custom cover entity gets another identifier (`cover.bedroom_shutter_2`) and your scripts will have to be edited to use it.
 
-- **Demander une ouverture ou une fermeture complète** à l'entité personnalisée : la commande est toujours envoyée, même si la position estimée est déjà à l'extrémité, et la position est recalée à 0 % ou à 100 %.
-- **Indiquer la position réelle sans faire bouger le volet** : dans **Outils de développement → Actions**, choisissez l'action **Recaler la position** (Custom Cover Position), sélectionnez l'entité, saisissez la position réelle (0 à 100) et cliquez sur **Exécuter**.
+**When the custom cover entity is deleted, everything is put back**: the source entity gets its name and identifier back. What you changed in the meantime is respected.
 
-## Dépannage
+### Hiding and disabling
 
-**La position ne correspond plus à la réalité.** C'est normal après une commande faite hors de Home Assistant. Voir [Recaler la position](#recaler-la-position).
+- **Hide the source entity** removes it from the automatically generated screens, so that it is not used by mistake. It is still used internally to send the commands, and it is still offered in the pick lists of scripts (Home Assistant does not allow removing it from them).
+- **Disable the other entities of the source device** disables everything except the source entity, for example the "My Position" or "Identify" buttons of a Somfy integration. Careful: the device's **sensors** (battery, power…) are disabled too, which is why the option is off by default. Everything is enabled again if you untick it or delete the custom cover entity.
 
-**Le volet s'arrête trop haut ou trop bas quand je demande une position.** Les délais sont à ajuster : corrigez-les de quelques dixièmes de seconde dans les réglages (voir [Modifier un réglage plus tard](#modifier-un-réglage-plus-tard)).
+The device page, before and after: the custom cover entity, its position buttons, the hidden source entity and "My position" disabled.
 
-**L'entité personnalisée est « Indisponible ».** L'entité source l'est : l'intégration qui la fournit est hors ligne.
+<table align="center">
+  <tr>
+    <td align="center"><b>Before</b><br><img src="docs/images/source-device-before.png" alt="The device page before: the shutter entity and the My position button" width="480"></td>
+    <td align="center"><b>After</b><br><img src="docs/images/device-page-after.png" alt="The device page after: the custom cover entity, the hidden source entity, the Heat and Sun buttons, and +1 disabled entity" width="480"></td>
+  </tr>
+</table>
 
-**Je ne trouve pas le bouton « Ajouter une entité ».** La première fois, passez par **Ajouter une intégration** et cherchez « Custom Cover Position » ; le bouton existe ensuite sur la page de l'intégration.
+## Resetting the position
 
-**Mon entité personnalisée s'appelle `cover.xxx_2`.** L'identifiant voulu était déjà pris, par exemple par une ancienne entité qui reste dans Paramètres → Appareils et services → Entités. Supprimez ou renommez cette entité, puis recréez l'entité personnalisée. Le même cas arrive aux boutons de positions s'ils portent le nom d'anciens boutons de modèle.
+The position is estimated: a command given with the original remote, by hand or after a power cut can make it **drift**. There are two ways to put it right:
 
-**Je cherche les réglages dans l'intégration de mon appareil (Overkiz…).** Ils sont dans Custom Cover Position, pas dans l'intégration de l'appareil source. Voir [Modifier un réglage plus tard](#modifier-un-réglage-plus-tard).
+- **Ask the custom cover entity for a complete opening or closing**: the command is always sent, even if the estimated position is already at the end, and the position is reset to 0% or 100%.
+- **Tell it the real position without moving the shutter**: in **Settings → Tools → Actions**, choose the **Set known position** action (Custom Cover Position), select the target (the custom cover entity concerned), enter the real position (between 0 and 100) and click **Perform action**.
 
-**L'icône n'apparaît pas.** Redémarrez Home Assistant, puis rechargez la page en forçant le cache.
+<table align="center">
+  <tr>
+    <td><img src="docs/images/set-known-position-1.png" alt="Steps to reset the position of an entity (1)" width="480"></td>
+    <td><img src="docs/images/set-known-position-2.png" alt="Steps to reset the position of an entity (2)" width="480"></td>
+  </tr>
+</table>
 
-## Besoin d'aide ou signaler un bug
+<table align="center">
+  <tr>
+    <td><img src="docs/images/set-known-position-3.png" alt="Steps to reset the position of an entity (3)" width="480"></td>
+    <td><img src="docs/images/set-known-position-4.png" alt="The reset position shown in the control block of the entity" width="480"></td>
+  </tr>
+</table>
 
-Un problème, une question, une idée ? Ouvrez un ticket sur [GitHub](https://github.com/Faufyzen/ha-custom-cover-position/issues/new/choose). Vous aiderez beaucoup en joignant :
+## Troubleshooting
 
-1. **Le fichier de diagnostic de l'entité.** Page de l'intégration Custom Cover Position, menu ⋮ de l'entité, **Télécharger les diagnostics**. Le fichier (en anglais, **sans mot de passe ni jeton**) donne les versions de l'intégration et de Home Assistant, la configuration, l'état de l'entité personnalisée et de l'entité source, les boutons de positions et les autres entités de l'appareil. Le bouton de la page de l'appareil appartient à l'intégration de l'appareil source et ne donne pas ce fichier.
-2. **Les journaux de débogage**, si vous pouvez : sur la page de l'intégration, menu ⋮ en haut à droite, **Activer la journalisation de débogage** ; reproduisez le problème ; cliquez sur **Désactiver la journalisation de débogage** : un fichier est téléchargé.
-3. **Une description** de ce que vous attendiez et de ce qui s'est passé, avec les étapes pour reproduire le problème.
+**The position no longer matches reality.** This is normal after a command given outside Home Assistant. See [Resetting the position](#resetting-the-position).
 
-Glissez les fichiers dans le ticket pour les joindre.
+**The shutter stops too high or too low when I ask for a position.** The times need adjusting: correct them by a few tenths of a second in the settings (see [Changing a setting later](#changing-a-setting-later)).
 
-> 📷 **Capture à ajouter** : le menu ⋮ d'une entité sur la page de l'intégration, avec « Télécharger les diagnostics ».
+**The custom cover entity is "Unavailable".** The source entity is: the integration that provides it is offline.
 
-## Limites
+**I cannot find the "Add a cover entity" button.** The first time, go through **Add integration** and search for "Custom Cover Position"; the button then exists on the integration page.
 
-- **La position est une estimation.** Rien ne la mesure : elle peut dériver (télécommande, vent, usure du moteur), et il faut parfois la recaler.
-- **Les temps de réponse comptent.** Avec une intégration passant par un service en ligne, la commande peut arriver avec un léger retard. L'intégration démarre son décompte au moment où l'ordre est accepté.
-- **L'inclinaison des lames n'est pas gérée** (store vénitien ou pergola à lames).
-- **Une seule entité personnalisée par entité source.** Une entité source qui n'a pas d'identifiant unique dans Home Assistant ne peut être ni renommée, ni masquée, ni désactivée : l'échange des noms n'a pas lieu pour elle.
-- **8 positions prédéfinies au maximum** par entité.
+**My custom cover entity is called `cover.xxx_2`.** The wanted identifier was already taken, for example by an old entity still listed under Settings → Devices & services → Entities. Delete or rename that entity, then create the custom cover entity again. The same happens to the position buttons if they carry the name of old template buttons.
 
-## Langues et documentation
+**I am looking for the settings in the integration of my device (Overkiz…).** They are in Custom Cover Position, not in the integration of the source device. See [Changing a setting later](#changing-a-setting-later).
 
-L'intégration est traduite en **français et en anglais**. Elle s'affiche dans la langue choisie dans Home Assistant ; pour toute autre langue, elle s'affiche en anglais. Quelques éléments restent en anglais quelle que soit la langue : le fichier de diagnostic, et ce qui vient de Home Assistant ou de l'intégration de l'appareil source. Cette documentation existe en **français** et en **anglais**.
+**The icon does not show.** Restart Home Assistant, then reload the page bypassing the cache.
 
-## Licence et crédits
+## Need help or want to report a bug
 
-MIT. Merci à [davidramosweb](https://github.com/davidramosweb/home-assistant-custom-components-cover-time-based) et à [Sese-Schneider](https://github.com/Sese-Schneider/ha-cover-time-based) : leurs intégrations ont inspiré celle-ci.
+A problem, a question, an idea? Open a ticket on [GitHub](https://github.com/Faufyzen/ha-custom-cover-position/issues/new/choose). You will help a lot by attaching:
+
+1. **The entity's diagnostics file.** Custom Cover Position integration page, ⋮ menu of the entity, **Download diagnostics**. The file (in English, **with no password or token**) gives the versions of the integration and of Home Assistant, the configuration, the state of the custom cover entity and of the source entity, the position buttons and the other entities of the device. The button on the device page belongs to the integration of the source device and does not give this file.
+2. **The debug logs**, if you can: on the integration page, ⋮ menu at the top right, **Enable debug logging**; reproduce the problem; click **Disable debug logging**: a file is downloaded.
+3. **A description** of what you expected and what happened, with the steps to reproduce the problem.
+
+Drag the files into the ticket to attach them.
+
+<p align="center">
+  <img src="docs/images/diagnostics-menu.png" alt="The ⋮ menu of an entity on the integration page, with Download diagnostics" width="640">
+</p>
+
+## Limitations
+
+- **The position is an estimate.** Nothing measures it: it can drift (remote control, wind, motor wear), and it sometimes has to be reset.
+- **Response times matter.** With an integration that goes through an online service, the command may arrive with a slight delay. The integration starts its count at the moment the command is accepted.
+- **Slat tilt is not supported** (venetian blind or louvered pergola).
+- **Only one custom cover entity per source entity.** A source entity that has no unique identifier in Home Assistant can be neither renamed, hidden nor disabled: the name exchange does not happen for it.
+- **At most 8 preset positions** per entity.
+
+## Languages and documentation
+
+The integration is translated into **French and English**. It is shown in the language chosen in Home Assistant; for any other language, it is shown in English. A few elements stay in English whatever the language: the diagnostics file, and whatever comes from Home Assistant or from the integration of the source device. This documentation exists in **English** (this file) and in [**French**](README.fr.md). The screenshots are in English.
+
+## License and credits
+
+MIT. Thanks to [davidramosweb](https://github.com/davidramosweb/home-assistant-custom-components-cover-time-based) and to [Sese-Schneider](https://github.com/Sese-Schneider/ha-cover-time-based): their integrations inspired this one.
