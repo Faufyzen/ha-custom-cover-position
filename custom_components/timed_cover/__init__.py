@@ -187,7 +187,10 @@ def _reactiver_autres_entites(hass: HomeAssistant, entry: ConfigEntry) -> None:
         autre = registre.async_get(identifiant)
         if autre is not None and autre.disabled_by is er.RegistryEntryDisabler.USER:
             registre.async_update_entity(autre.entity_id, disabled_by=None)
-    hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_DISABLED_BY_US: []})
+    # À la suppression, Home Assistant a déjà retiré l'entrée de sa liste quand cette fonction
+    # s'exécute : la mettre à jour lèverait UnknownEntry et interromprait toute la remise en état.
+    if hass.config_entries.async_get_entry(entry.entry_id) is not None:
+        hass.config_entries.async_update_entry(entry, data={**entry.data, CONF_DISABLED_BY_US: []})
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
