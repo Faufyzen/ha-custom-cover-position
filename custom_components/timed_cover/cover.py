@@ -65,6 +65,7 @@ from .const import (
     DOMAIN,
     SERVICE_SET_KNOWN_POSITION,
 )
+from . import groupe
 from .source import id_source
 from .travel import POSITION_OUVERTE, Direction, TravelEstimator
 
@@ -104,10 +105,13 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Ajoute l'ouvrant à position estimée d'une entrée de configuration."""
-    _preparer_registre(hass, entry)
-    _regler_favoris(hass, entry)
-    async_add_entities([OuvrantPositionEstimee(hass, entry)])
+    """Ajoute l'ouvrant à position estimée (ou le groupe) d'une entrée de configuration."""
+    if groupe.est_groupe(entry):
+        groupe.preparer_et_ajouter_cover(hass, entry, async_add_entities)
+    else:
+        _preparer_registre(hass, entry)
+        _regler_favoris(hass, entry)
+        async_add_entities([OuvrantPositionEstimee(hass, entry)])
 
     plateforme = entity_platform.async_get_current_platform()
     plateforme.async_register_entity_service(

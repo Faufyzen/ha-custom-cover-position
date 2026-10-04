@@ -25,6 +25,7 @@ from .const import (
     CONF_PRESETS,
     DOMAIN,
 )
+from . import groupe
 from .cover import _appareil_de
 from .source import id_source
 
@@ -42,6 +43,9 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Crée un bouton par position prédéfinie, et retire ceux d'une position supprimée."""
+    if groupe.est_groupe(entry):
+        groupe.preparer_et_ajouter_boutons(hass, entry, async_add_entities)
+        return
     reglages = {**entry.data, **entry.options}
     positions = reglages.get(CONF_PRESETS, [])
     registre = er.async_get(hass)

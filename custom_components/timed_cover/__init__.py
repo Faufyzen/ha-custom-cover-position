@@ -30,6 +30,7 @@ from .const import (
     DEFAULT_TAKE_OVER,
     DOMAIN,
 )
+from . import groupe
 from .source import id_source
 
 _LOGGER = logging.getLogger(__name__)
@@ -38,7 +39,12 @@ PLATFORMS = [Platform.COVER, Platform.BUTTON]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Prépare un ouvrant à position estimée à partir de son entrée de configuration."""
+    """Prépare un ouvrant à position estimée (ou un groupe) à partir de son entrée de configuration."""
+    if groupe.est_groupe(entry):
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        entry.async_on_unload(entry.add_update_listener(_recharger_apres_modification))
+        groupe.surveiller_membres(hass, entry)
+        return True
     _memoriser_id_interne(hass, entry)
     source = id_source(hass, entry)
 
@@ -200,6 +206,9 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     On ne remet en état que ce que l'intégration avait elle-même changé : un nom ou un
     identifiant modifié depuis par l'utilisateur est respecté.
     """
+    if groupe.est_groupe(entry):
+        return  # un groupe ne change rien aux volets : ses entités disparaissent avec lui
+    groupe.retirer_des_groupes(hass, entry)
     _reactiver_autres_entites(hass, entry)
     registre = er.async_get(hass)
     source = registre.async_get(id_source(hass, entry))

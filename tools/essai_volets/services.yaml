@@ -1,0 +1,12 @@
+configurer:
+  fields:
+    delai:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 30
+          step: 0.1
+          unit_of_measurement: s
+vider:
+journal:

@@ -8,16 +8,19 @@ Ce document s'adresse à celles et ceux qui veulent modifier l'intégration. Le 
 python3 -m unittest discover -s tests -v          # tests de l'estimateur (sans Home Assistant)
 ./tools/deployer-sandbox.sh --redemarrer          # copie dans la VM de test et redémarre
 python3 tools/essai_sandbox.py                    # scénarios complets sur la VM de test
+python3 tools/essai_groupe.py                      # scénarios des groupes (7 faux volets lents)
+python3 tools/essai_parallele.py                   # mesure du parallélisme : liste, script, template, groupe natif
 python3 tools/tableau_textes.py fichier.md        # tableau anglais/français des textes, pour relecture
 ```
 
-Les scénarios utilisent l'intégration `demo` de Home Assistant comme fausses entités. Les outils supposent une instance Home Assistant de test et un jeton dans `~/.ha-sandbox-token`. Les textes affichés sont dans `custom_components/timed_cover/strings.json` (anglais, référence technique) et `translations/` (une langue par fichier) ; le français fait foi.
+Les scénarios utilisent l'intégration `demo` de Home Assistant comme fausses entités. Les essais de groupes et de parallélisme utilisent aussi `tools/essai_volets/`, une intégration d'essai (non distribuée) à copier dans `/Volumes/config/custom_components/essai_volets/` : huit faux volets qui notent l'instant où ils reçoivent chaque ordre et mettent un temps réglable à l'accepter. Les outils supposent une instance Home Assistant de test et un jeton dans `~/.ha-sandbox-token`. Les textes affichés sont dans `custom_components/timed_cover/strings.json` (anglais, référence technique) et `translations/` (une langue par fichier) ; le français fait foi.
 
 ## Comment ça marche
 
 - **Ouvrir / Fermer** : la commande est envoyée à l'entité source, et la position est estimée à 100 % ou 0 % à la fin du délai.
 - **Aller à une position** : une commande d'ouverture ou de fermeture est envoyée, puis une commande d'arrêt à l'instant calculé. Si le volet va déjà dans le bon sens, seule l'heure d'arrêt change.
 - **Plusieurs entités à la fois** (script de groupe) : chaque entité personnalisée est indépendante ; ses commandes passent l'une après l'autre grâce à un verrou qui lui est propre.
+- **Groupe** (`groupe.py`) : une entrée de configuration de type `group` qui désigne des entités personnalisées. Un appel de service par volet, lancés ensemble par `asyncio.gather` (comme `parallel:`) : un volet indisponible est ignoré, une erreur n'empêche pas les autres. Les calculs sans Home Assistant (moyenne des positions, état, regroupement des positions par nom) sont dans `agregat.py`, testés seuls.
 - **Redémarrage de Home Assistant** : la dernière position est restaurée.
 - **Disponibilité** : l'entité personnalisée est indisponible quand l'entité source l'est ; l'état « inconnu » reste disponible.
 - **Entité source** : retrouvée par son identifiant interne du registre (et non par son nom), ce qui lui permet d'être renommée sans que l'intégration la perde.

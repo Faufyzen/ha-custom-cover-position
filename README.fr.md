@@ -12,7 +12,7 @@ Elle s'inspire de deux projets : [cover_rf_time_based](https://github.com/davidr
 
 [![Ouvrir dans HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Faufyzen&repository=ha-custom-cover-position&category=integration)
 
-**[Pourquoi](#pourquoi)** · **[Installation](#installation)** · **[Configuration](#configuration)** · **[Entités et noms](#entités-et-noms)** · **[Recaler la position](#recaler-la-position)** · **[Dépannage](#dépannage)** · **[Besoin d'aide ou signaler un bug](#besoin-daide-ou-signaler-un-bug)** · **[Limites](#limites)** · **[Langues](#langues-et-documentation)**
+**[Pourquoi](#pourquoi)** · **[Installation](#installation)** · **[Configuration](#configuration)** · **[Entités et noms](#entités-et-noms)** · **[Groupes](#groupes-de-volets)** · **[Recaler la position](#recaler-la-position)** · **[Dépannage](#dépannage)** · **[Besoin d'aide ou signaler un bug](#besoin-daide-ou-signaler-un-bug)** · **[Limites](#limites)** · **[Langues](#langues-et-documentation)**
 
 
 ## Pourquoi
@@ -26,6 +26,7 @@ Cette intégration crée, à côté de l'entité existante (l'**entité source**
 - **va à la position demandée** : elle envoie l'ouverture ou la fermeture, puis l'arrêt à l'instant calculé ;
 - **se lie à l'appareil de l'entité source** : pas de doublon dans la liste de vos appareils, pas de création manuelle dans les Entrées ou les fichiers configuration.yaml et templates.yaml ;
 - **reprend le nom et l'identifiant de l'entité source** : vos scripts et automatisations continuent de fonctionner sans modification ;
+- **commande plusieurs volets d'un coup** avec des [groupes](#groupes-de-volets), chaque volet gardant sa position ;
 - **crée des boutons de positions prédéfinies** (« Pare-soleil », « Chaleur »…) et peut **désactiver les entités de l'appareil source** qui feraient perdre le suivi de position.
 
 La position est une **estimation** : elle suppose que le volet met toujours le même temps à se fermer ou s'ouvrir. Voir [Limites](#limites).
@@ -75,7 +76,7 @@ Supprimez d'abord chaque entité personnalisée (Paramètres → Appareils et se
 Tout se règle dans une fenêtre de configuration, en deux étapes.
 
 1. Allez dans **Paramètres → Appareils et services**.
-2. La première fois, cliquez sur **Ajouter une intégration** et cherchez **Custom Cover Position**. Ensuite, la carte de l'intégration apparaît : son bouton **Ajouter une entité** suffit.
+2. La première fois, cliquez sur **Ajouter une intégration** et cherchez **Custom Cover Position**. Ensuite, la carte de l'intégration apparaît : son bouton **Ajouter une entité ou un groupe** suffit. Un menu propose alors **Entité personnalisée** (ce qui suit) ou **Groupe d'entités personnalisées** (voir [Groupes de volets](#groupes-de-volets)) : choisissez la première.
 
 <p align="center">
   <img src="docs/images/add-integration-search.png" alt="La fenêtre « Select brand » avec « Custom Cover Position » trouvé par la recherche" width="640">
@@ -198,6 +199,34 @@ La page de l'appareil, avant puis après : l'entité personnalisée, ses boutons
   </tr>
 </table>
 
+## Groupes de volets
+
+Un **groupe** commande plusieurs entités personnalisées **en même temps**, chacune gardant sa propre position estimée. C'est ce que vous feriez avec un script qui lance les ordres en parallèle (action `parallel:`), sans script à écrire ni à entretenir. Contrairement à un groupe natif de Home Assistant, il crée aussi des **boutons de positions prédéfinies communes** à ses volets.
+
+### Créer un groupe
+
+1. **Paramètres → Appareils et services**, carte **Custom Cover Position**, bouton **Ajouter une entité ou un groupe**.
+2. Choisissez **Groupe d'entités personnalisées**.
+3. Donnez un **nom** (« Volets RDC ») et choisissez **au moins deux entités personnalisées**. Les groupes ne sont pas proposés : un groupe ne contient pas d'autre groupe.
+
+### Ce que crée un groupe
+
+Sous un appareil du même nom que le groupe :
+
+- **Une entité `cover`** : Ouvrir, Fermer, Arrêter et Aller à une position envoient le même ordre à tous les volets en même temps. Pour « 50 % », chaque volet part de **sa** position et va à 50 % : un volet ouvert, un volet fermé et un volet à moitié ouvert finissent tous à 50 %. La position affichée est la **moyenne** des volets (exacte quand ils sont tous au même endroit) ; le groupe est en mouvement tant qu'un volet bouge, et fermé quand tous le sont.
+- **Un bouton par nom de position** trouvé chez les volets (« Soleil », « Chaleur »…), nommé « <nom du groupe> <nom de la position> ». Les noms sont comparés sans tenir compte des majuscules ni des accents. Appuyer sur le bouton amène **chaque volet qui a cette position à son propre pourcentage** (« Soleil » peut valoir 60 % pour l'un et 50 % pour l'autre) ; un volet qui ne l'a pas ne bouge pas. Le groupe garde le même nombre de boutons que de noms de position distincts.
+- **L'action Recaler la position** appliquée au groupe recale tous les volets d'un coup.
+
+Un volet **indisponible est ignoré** (un avertissement apparaît dans les journaux) ; si l'ordre échoue pour un volet disponible, les autres le reçoivent quand même et l'erreur nomme le volet fautif.
+
+### Modifier un groupe
+
+La **roue dentée** du groupe permet de changer la liste de ses volets (le nom ne se choisit qu'à la création). Les boutons suivent les positions des volets : ajouter ou renommer une position sur un volet crée ou retire le bouton du groupe. Supprimer un volet le retire de ses groupes ; supprimer un groupe ne touche pas à ses volets.
+
+### À savoir : les ordres partent ensemble, pas forcément les moteurs
+
+Le groupe envoie tous les ordres au même instant. Avec des volets radio Somfy RTS commandés par une box TaHoma (intégration Overkiz), la box émet les ordres radio **l'un après l'autre**, environ une seconde chacun (d'après des journaux de 7 volets) : les derniers volets démarrent donc quelques secondes après le premier, quoi que fasse l'intégration. Chaque volet démarre son décompte quand Overkiz accepte son ordre ; l'ordre d'arrêt suit le même chemin, ce qui devrait compenser le décalage sur la durée du trajet. Si vous constatez un écart de position entre volets d'un groupe, recalez-les (voir [Recaler la position](#recaler-la-position)).
+
 ## Recaler la position
 
 La position est estimée : une commande faite avec la télécommande d'origine, à la main ou après une coupure de courant peut la faire **dériver**. Deux façons de la remettre d'équerre :
@@ -227,7 +256,7 @@ La position est estimée : une commande faite avec la télécommande d'origine, 
 
 **L'entité personnalisée est « Indisponible ».** L'entité source l'est : l'intégration qui la fournit est hors ligne.
 
-**Je ne trouve pas le bouton « Ajouter une entité ».** La première fois, passez par **Ajouter une intégration** et cherchez « Custom Cover Position » ; le bouton existe ensuite sur la page de l'intégration.
+**Je ne trouve pas le bouton « Ajouter une entité ou un groupe ».** La première fois, passez par **Ajouter une intégration** et cherchez « Custom Cover Position » ; le bouton existe ensuite sur la page de l'intégration.
 
 **Mon entité personnalisée s'appelle `cover.xxx_2`.** L'identifiant voulu était déjà pris, par exemple par une ancienne entité qui reste dans Paramètres → Appareils et services → Entités. Supprimez ou renommez cette entité, puis recréez l'entité personnalisée. Le même cas arrive aux boutons de positions s'ils portent le nom d'anciens boutons de modèle.
 
@@ -256,6 +285,7 @@ Glissez les fichiers dans le ticket pour les joindre.
 - **L'inclinaison des lames n'est pas gérée** (store vénitien ou pergola à lames).
 - **Une seule entité personnalisée par entité source.** Une entité source qui n'a pas d'identifiant unique dans Home Assistant ne peut être ni renommée, ni masquée, ni désactivée : l'échange des noms n'a pas lieu pour elle.
 - **8 positions prédéfinies au maximum** par entité.
+- **Un groupe ne contient que des entités personnalisées**, pas d'autre groupe ni d'entité source seule.
 
 ## Langues et documentation
 

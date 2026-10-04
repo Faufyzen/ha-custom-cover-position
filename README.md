@@ -12,7 +12,7 @@ It is inspired by two projects: [cover_rf_time_based](https://github.com/davidra
 
 [![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Faufyzen&repository=ha-custom-cover-position&category=integration)
 
-**[Why](#why)** · **[Installation](#installation)** · **[Configuration](#configuration)** · **[Entities and names](#entities-and-names)** · **[Resetting the position](#resetting-the-position)** · **[Troubleshooting](#troubleshooting)** · **[Need help or want to report a bug](#need-help-or-want-to-report-a-bug)** · **[Limitations](#limitations)** · **[Languages](#languages-and-documentation)**
+**[Why](#why)** · **[Installation](#installation)** · **[Configuration](#configuration)** · **[Entities and names](#entities-and-names)** · **[Groups](#groups-of-covers)** · **[Resetting the position](#resetting-the-position)** · **[Troubleshooting](#troubleshooting)** · **[Need help or want to report a bug](#need-help-or-want-to-report-a-bug)** · **[Limitations](#limitations)** · **[Languages](#languages-and-documentation)**
 
 
 ## Why
@@ -26,6 +26,7 @@ This integration creates, next to the existing entity (the **source entity**), a
 - **goes to the requested position**: it sends the open or close command, then the stop command at the calculated moment;
 - **links itself to the device of the source entity**: no duplicate in your device list, and nothing to create by hand in Helpers or in the configuration.yaml and templates.yaml files;
 - **takes over the name and identifier of the source entity**: your scripts and automations keep working without any change;
+- **controls several covers at once** with [groups](#groups-of-covers), each cover keeping its own position;
 - **creates preset position buttons** ("Sun shade", "Heat"…) and can **disable the entities of the source device** that would make it lose track of the position.
 
 The position is an **estimate**: it assumes that the shutter always takes the same time to close or open. See [Limitations](#limitations).
@@ -75,7 +76,7 @@ First delete every custom cover entity (Settings → Devices & services → Cust
 Everything is set in a configuration window, in two steps.
 
 1. Go to **Settings → Devices & services**.
-2. The first time, click **Add integration** and search for **Custom Cover Position**. After that, the integration card appears: its **Add a cover entity** button is enough.
+2. The first time, click **Add integration** and search for **Custom Cover Position**. After that, the integration card appears: its **Add a cover entity or a group** button is enough. A menu then offers **Custom entity** (what follows) or **Group of custom entities** (see [Groups of covers](#groups-of-covers)): choose the first one.
 
 <p align="center">
   <img src="docs/images/add-integration-search.png" alt="The Select brand window with Custom Cover Position found by the search" width="640">
@@ -198,6 +199,34 @@ The device page, before and after: the custom cover entity, its position buttons
   </tr>
 </table>
 
+## Groups of covers
+
+A **group** controls several custom entities **at the same time**, each keeping its own estimated position. It does what a script with parallel actions (`parallel:`) would do, without a script to write or maintain. Unlike a native Home Assistant group, it also creates **preset position buttons** shared by its covers.
+
+### Creating a group
+
+1. **Settings → Devices & services**, **Custom Cover Position** card, **Add a cover entity or a group** button.
+2. Choose **Group of custom entities**.
+3. Give it a **name** ("Ground Floor Shutters") and choose **at least two custom entities**. Groups are not listed: a group cannot contain another group.
+
+### What a group creates
+
+Under a device named like the group:
+
+- **A `cover` entity**: Open, Close, Stop and Go to a position send the same order to all covers at the same time. For "50%", each cover starts from **its own** position and goes to 50%: an open cover, a closed cover and a half-open cover all end at 50%. The position shown is the **average** of the covers (exact when they are all at the same place); the group is moving while any cover moves, and closed when all of them are.
+- **One button per position name** found in its covers ("Sun", "Heat"…), named "<group name> <position name>". Names are compared ignoring case and accents. Pressing the button sends **each cover that has this position to its own percentage** ("Sun" can be 60% for one cover and 50% for another); a cover that does not have it does not move. The group has as many buttons as there are distinct position names.
+- **The Set known position action** applied to the group resets all covers at once.
+
+An **unavailable cover is skipped** (a warning appears in the logs); if the order fails for an available cover, the others still receive it and the error names the failing cover.
+
+### Changing a group
+
+The group's **cogwheel** changes the list of its covers (the name can only be chosen when the group is created). The buttons follow the covers' positions: adding or renaming a position on a cover creates or removes the group's button. Deleting a cover removes it from its groups; deleting a group does not touch its covers.
+
+### Good to know: the orders leave together, not necessarily the motors
+
+The group sends all the orders at the same instant. With Somfy RTS radio shutters driven by a TaHoma box (Overkiz integration), the box sends the radio orders **one after the other**, about one second each (according to logs of 7 shutters): the last shutters therefore start a few seconds after the first, whatever the integration does. Each cover starts its countdown when Overkiz accepts its order; the stop order follows the same path, which should offset the delay over the length of the travel. If you notice a position difference between the covers of a group, reset them (see [Resetting the position](#resetting-the-position)).
+
 ## Resetting the position
 
 The position is estimated: a command given with the original remote, by hand or after a power cut can make it **drift**. There are two ways to put it right:
@@ -227,7 +256,7 @@ The position is estimated: a command given with the original remote, by hand or 
 
 **The custom cover entity is "Unavailable".** The source entity is: the integration that provides it is offline.
 
-**I cannot find the "Add a cover entity" button.** The first time, go through **Add integration** and search for "Custom Cover Position"; the button then exists on the integration page.
+**I cannot find the "Add a cover entity or a group" button.** The first time, go through **Add integration** and search for "Custom Cover Position"; the button then exists on the integration page.
 
 **My custom cover entity is called `cover.xxx_2`.** The wanted identifier was already taken, for example by an old entity still listed under Settings → Devices & services → Entities. Delete or rename that entity, then create the custom cover entity again. The same happens to the position buttons if they carry the name of old template buttons.
 
@@ -256,6 +285,7 @@ Drag the files into the ticket to attach them.
 - **Slat tilt is not supported** (venetian blind or louvered pergola).
 - **Only one custom cover entity per source entity.** A source entity that has no unique identifier in Home Assistant can be neither renamed, hidden nor disabled: the name exchange does not happen for it.
 - **At most 8 preset positions** per entity.
+- **A group only contains custom entities**, no other group and no bare source entity.
 
 ## Languages and documentation
 

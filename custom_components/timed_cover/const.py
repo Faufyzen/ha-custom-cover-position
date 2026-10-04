@@ -23,6 +23,10 @@ MAX_PRESETS = 8  # au plus 8 positions : au-delà, la fenêtre de l'ouvrant devi
 CONF_DISABLE_OTHERS = "disable_other_entities"  # désactiver les autres entités de l'appareil d'origine
 CONF_DISABLED_BY_US = "disabled_entities"  # identifiants (registre) des entités désactivées par nous
 CONF_RESTORE = "restore"  # ce qu'il faut remettre en état à la suppression (voir __init__.py)
+CONF_KIND = "kind"  # type d'entrée : volet (par défaut, entrées d'avant les groupes) ou groupe
+KIND_COVER = "cover"
+KIND_GROUP = "group"
+CONF_MEMBERS = "members"  # groupe : identifiants des entrées de configuration de ses volets
 
 # Valeurs proposées par défaut.
 DEFAULT_TRAVEL_TIME = 30.0
@@ -52,5 +56,6 @@ ATTR_SOURCE_ENTITY = "source_entity"
 ATTR_TRAVEL_TIME_UP = "travel_time_up"
 ATTR_TRAVEL_TIME_DOWN = "travel_time_down"
 ATTR_TARGET_POSITION = "target_position"
+ATTR_MEMBERS = "members"  # groupe : identifiants (cover.xxx) de ses volets
 
 SERVICE_SET_KNOWN_POSITION = "set_known_position"

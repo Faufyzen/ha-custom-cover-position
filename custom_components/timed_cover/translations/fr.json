@@ -1,10 +1,18 @@
 {
   "config": {
     "initiate_flow": {
-      "user": "Ajouter une entité"
+      "user": "Ajouter une entité ou un groupe"
     },
     "step": {
       "user": {
+        "title": "Que voulez-vous ajouter ?",
+        "description": "Une entité personnalisée ajoute une position estimée à une entité existante. Un groupe envoie le même ordre à plusieurs entités personnalisées en même temps, chacune gardant sa propre position.",
+        "menu_options": {
+          "entite": "Entité personnalisée",
+          "groupe": "Groupe d'entités personnalisées"
+        }
+      },
+      "entite": {
         "title": "Choisir l'entité source",
         "description": "Sélectionnez l'entité source à lier. L'entité personnalisée se rangera sous le même appareil et affichera sa position actuelle.",
         "data": {
@@ -48,6 +56,18 @@
             }
           }
         }
+      },
+      "groupe": {
+        "title": "Créer un groupe",
+        "description": "Le groupe envoie chaque ordre (ouvrir, fermer, arrêter, aller à une position) à toutes ses entités en même temps, comme un script avec des actions en parallèle. Chaque entité garde sa propre position estimée. Le groupe crée, sous son propre appareil, une entité cover et un bouton par nom de position prédéfinie trouvé dans ses entités (par exemple « Soleil »).",
+        "data": {
+          "name": "Nom du groupe",
+          "members": "Entités du groupe"
+        },
+        "data_description": {
+          "name": "Le nom affiché dans Home Assistant, par exemple « Volets RDC ».",
+          "members": "Choisissez au moins deux entités personnalisées. Les groupes ne sont pas proposés."
+        }
       }
     },
     "error": {
@@ -56,7 +76,10 @@
       "suffixe_invalide": "Saisissez un suffixe composé de lettres ou de chiffres.",
       "positions_invalides": "Chaque position prédéfinie doit avoir un nom et un pourcentage compris entre 0 et 100.",
       "noms_en_double": "Ce nom est déjà utilisé pour une position de cette entité.",
-      "trop_de_positions": "8 positions prédéfinies maximum."
+      "trop_de_positions": "8 positions prédéfinies maximum.",
+      "groupe_trop_petit": "Choisissez au moins deux entités.",
+      "volet_invalide": "Cette entité ne peut pas faire partie d'un groupe.",
+      "nom_invalide": "Saisissez un nom composé de lettres ou de chiffres."
     },
     "abort": {
       "already_configured": "Cette entité est déjà configurée."
@@ -92,12 +115,24 @@
             }
           }
         }
+      },
+      "groupe": {
+        "title": "Réglages du groupe",
+        "description": "Les modifications s'appliquent tout de suite. Le nom ne se choisit qu'à la création du groupe.",
+        "data": {
+          "members": "Entités du groupe"
+        },
+        "data_description": {
+          "members": "Choisissez au moins deux entités personnalisées. Les groupes ne sont pas proposés."
+        }
       }
     },
     "error": {
       "positions_invalides": "Chaque position prédéfinie doit avoir un nom et un pourcentage compris entre 0 et 100.",
       "noms_en_double": "Ce nom est déjà utilisé pour une position de cette entité.",
-      "trop_de_positions": "8 positions prédéfinies maximum."
+      "trop_de_positions": "8 positions prédéfinies maximum.",
+      "groupe_trop_petit": "Choisissez au moins deux entités.",
+      "volet_invalide": "Cette entité ne peut pas faire partie d'un groupe."
     }
   },
   "selector": {
@@ -150,6 +185,12 @@
     },
     "cover_not_found": {
       "message": "L'entité personnalisée liée à ce bouton est introuvable."
+    },
+    "group_no_member": {
+      "message": "Aucune entité du groupe « {name} » n'est disponible."
+    },
+    "group_members_failed": {
+      "message": "L'ordre envoyé par le groupe « {name} » a échoué pour : {members}. Première erreur : {error}"
     }
   }
 }

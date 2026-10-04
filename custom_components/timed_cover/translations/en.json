@@ -1,10 +1,18 @@
 {
   "config": {
     "initiate_flow": {
-      "user": "Add a cover entity"
+      "user": "Add a cover entity or a group"
     },
     "step": {
       "user": {
+        "title": "What do you want to add?",
+        "description": "A custom entity adds an estimated position to an existing cover entity. A group sends the same order to several custom entities at once, each keeping its own position.",
+        "menu_options": {
+          "entite": "Custom entity",
+          "groupe": "Group of custom entities"
+        }
+      },
+      "entite": {
         "title": "Choose the source entity",
         "description": "Select the source entity to link. The custom cover entity will be placed under the same device and will show its current position.",
         "data": {
@@ -48,6 +56,18 @@
             }
           }
         }
+      },
+      "groupe": {
+        "title": "Create a group",
+        "description": "The group sends each order (open, close, stop, go to a position) to all its entities at the same time, like a script with parallel actions. Each entity keeps its own estimated position. Under its own device, the group creates a cover entity and one button for each preset position name found in its entities (for example « Sun »).",
+        "data": {
+          "name": "Group name",
+          "members": "Entities of the group"
+        },
+        "data_description": {
+          "name": "The name shown in Home Assistant, for example « Ground floor shutters ».",
+          "members": "Choose at least two custom entities. Groups are not listed."
+        }
       }
     },
     "error": {
@@ -56,7 +76,10 @@
       "suffixe_invalide": "Enter a suffix made of letters or digits.",
       "positions_invalides": "Each preset position needs a name and a percentage between 0 and 100.",
       "noms_en_double": "This name is already used for a position of this entity.",
-      "trop_de_positions": "Maximum 8 preset positions."
+      "trop_de_positions": "Maximum 8 preset positions.",
+      "groupe_trop_petit": "Choose at least two entities.",
+      "volet_invalide": "This entity cannot be part of a group.",
+      "nom_invalide": "Enter a name made of letters or digits."
     },
     "abort": {
       "already_configured": "This entity is already configured."
@@ -92,12 +115,24 @@
             }
           }
         }
+      },
+      "groupe": {
+        "title": "Group settings",
+        "description": "Changes apply immediately. The name can only be chosen when the group is created.",
+        "data": {
+          "members": "Entities of the group"
+        },
+        "data_description": {
+          "members": "Choose at least two custom entities. Groups are not listed."
+        }
       }
     },
     "error": {
       "positions_invalides": "Each preset position needs a name and a percentage between 0 and 100.",
       "noms_en_double": "This name is already used for a position of this entity.",
-      "trop_de_positions": "Maximum 8 preset positions."
+      "trop_de_positions": "Maximum 8 preset positions.",
+      "groupe_trop_petit": "Choose at least two entities.",
+      "volet_invalide": "This entity cannot be part of a group."
     }
   },
   "selector": {
@@ -150,6 +185,12 @@
     },
     "cover_not_found": {
       "message": "The custom cover entity linked to this button cannot be found."
+    },
+    "group_no_member": {
+      "message": "None of the entities of the group « {name} » is available."
+    },
+    "group_members_failed": {
+      "message": "The order sent by the group « {name} » failed for: {members}. First error: {error}"
     }
   }
 }

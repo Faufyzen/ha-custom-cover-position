@@ -77,6 +77,7 @@ def creer_volet(cle: str, source: str, nom: str | None = None, **reglages) -> st
     if "presets" in reglages:  # le formulaire range la liste dans le bloc « positions »
         reglages["positions"] = {"presets": reglages.pop("presets")}
     flux = api("POST", "/api/config/config_entries/flow", {"handler": "timed_cover"})
+    flux = api("POST", f"/api/config/config_entries/flow/{flux['flow_id']}", {"next_step_id": "entite"})
     flux = api("POST", f"/api/config/config_entries/flow/{flux['flow_id']}", {"source_entity": source})
     assert flux["step_id"] == "parametres", flux
     flux = api(
@@ -411,6 +412,8 @@ def main() -> int:
     verifier("message d'erreur en français", "indisponible" in msg_fr, msg_fr)
     verifier("second message traduit (français)", "introuvable" in fr.get("component.timed_cover.exceptions.cover_not_found.message", ""))
     f = api("POST", "/api/config/config_entries/flow", {"handler": "timed_cover"})
+    verifier("le formulaire commence par un menu : entité ou groupe", f["type"] == "menu" and f["menu_options"] == ["entite", "groupe"], str(f.get("menu_options")))
+    f = api("POST", f"/api/config/config_entries/flow/{f['flow_id']}", {"next_step_id": "entite"})
     f = api("POST", f"/api/config/config_entries/flow/{f['flow_id']}", {"source_entity": SOURCES["cuisine"]})
     defaut = next(c for c in f["data_schema"] if c["name"] == "source_suffix").get("default")
     api("DELETE", "/api/config/config_entries/flow/" + f["flow_id"])

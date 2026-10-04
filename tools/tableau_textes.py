@@ -32,11 +32,14 @@ NOMS_CHAMPS = {
     "device_class": "Classe d'appareil", "hide_source": "Masquer l'entité source",
     "disable_other_entities": "Désactiver les autres entités", "take_over": "Reprendre le nom",
     "source_suffix": "Suffixe", "position": "Position", "icon": "Icône",
+    "members": "Entités du groupe",
 }
 NOMS_ERREURS = {
     "source_introuvable": "Ouvrant introuvable", "source_deja_chronometree": "Ouvrant déjà lié",
     "suffixe_invalide": "Suffixe invalide", "positions_invalides": "Position invalide",
     "noms_en_double": "Noms en double", "trop_de_positions": "Trop de positions",
+    "groupe_trop_petit": "Groupe trop petit", "volet_invalide": "Entité refusée",
+    "nom_invalide": "Nom invalide",
 }
 VUS: dict[tuple[str, str], str] = {}  # (anglais, français) -> référence de la première apparition
 
@@ -83,7 +86,7 @@ def construire() -> list[Zone]:
     z.ajouter("Bouton", "config", "initiate_flow", "user"); zones.append(z)
 
     z = Zone(2, "Création, étape 1 : choisir l'entité source", "première fenêtre quand on ajoute une entité")
-    base = ("config", "step", "user")
+    base = ("config", "step", "entite")
     z.ajouter("Titre", *base, "title"); z.ajouter("Description", *base, "description")
     z.champs(base, ["source_entity"]); zones.append(z)
 
@@ -152,21 +155,53 @@ def zone_code() -> str:
             "par l'intégration.*\n\n| Réf. | Où il apparaît | Anglais | Français |\n| --- | --- | --- | --- |\n" + "\n".join(rows) + "\n")
 
 
+def zones_groupes() -> list[Zone]:
+    """Zones 10 à 12 : les groupes de volets (ajoutées après la zone 9 pour garder la numérotation)."""
+    zones = []
+    z = Zone(10, "Menu de départ et création d'un groupe", "premières fenêtres quand on ajoute une entité ou un groupe")
+    base = ("config", "step", "user")
+    z.ajouter("Menu : titre", *base, "title"); z.ajouter("Menu : explication", *base, "description")
+    z.ajouter("Menu : choix « entité »", *base, "menu_options", "entite")
+    z.ajouter("Menu : choix « groupe »", *base, "menu_options", "groupe")
+    base = ("config", "step", "groupe")
+    z.ajouter("Création du groupe : titre", *base, "title"); z.ajouter("Création du groupe : explication", *base, "description")
+    z.champs(base, ["name", "members"])
+    for cle in ("groupe_trop_petit", "volet_invalide", "nom_invalide"):
+        z.ajouter(f"Erreur « {NOMS_ERREURS[cle]} »", "config", "error", cle)
+    zones.append(z)
+
+    z = Zone(11, "Réglages d'un groupe (roue dentée)", "formulaire de modification d'un groupe existant")
+    base = ("options", "step", "groupe")
+    z.ajouter("Titre", *base, "title"); z.ajouter("Description", *base, "description")
+    z.champs(base, ["members"])
+    for cle in ("groupe_trop_petit", "volet_invalide"):
+        z.ajouter(f"Erreur « {NOMS_ERREURS[cle]} »", "options", "error", cle)
+    zones.append(z)
+
+    z = Zone(12, "Groupes : textes écrits dans le code", "messages d'erreur d'un groupe et appareil du groupe")
+    z.ajouter("Erreur quand aucune entité du groupe n'est disponible ({name} = groupe)", "exceptions", "group_no_member", "message")
+    z.ajouter("Erreur quand l'ordre échoue pour certaines entités ({members}, {error})", "exceptions", "group_members_failed", "message")
+    zones.append(z)
+    return zones
+
+
 def main() -> None:
     zones = construire()
-    total = sum(len(z.lignes) for z in zones)
+    groupes = zones_groupes()
+    total = sum(len(z.lignes) for z in zones + groupes)
     entete = (
         "# Relecture des textes — Custom Cover Position\n\n"
         "Chaque ligne a une référence (Z3.7, par exemple) : pour corriger, cite la référence et le texte voulu. "
         "Les colonnes anglais et français sont tirées des fichiers de traduction ; ce tableau ne peut donc pas "
         "différer de ce qui s'affiche. Les mots entre accolades, comme `{source}`, sont remplacés par Home Assistant.\n\n"
-        f"{total} lignes dans les zones 1 à 8 (les textes identiques à un texte déjà présenté sont signalés « identique à… » : "
+        f"{total} lignes dans les zones 1 à 8 et 10 à 12 (les textes identiques à un texte déjà présenté sont signalés « identique à… » : "
         "inutile de les relire), plus 6 textes de la zone 9.\n\n"
     )
-    contenu = entete + "\n".join(z.markdown() for z in zones) + "\n" + zone_code()
+    contenu = (entete + "\n".join(z.markdown() for z in zones) + "\n" + zone_code()
+               + "\n" + "\n".join(z.markdown() for z in groupes))
     cible = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("relecture-textes.md")
     cible.write_text(contenu)
-    print(f"{cible} : {total} textes dans {len(zones)} zones, plus la zone 9.")
+    print(f"{cible} : {total} textes dans {len(zones) + len(groupes)} zones, plus la zone 9.")
 
 
 if __name__ == "__main__":

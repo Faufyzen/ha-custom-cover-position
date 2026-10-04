@@ -1,10 +1,12 @@
-"""Étapes de configuration d'un volet à temps de trajet.
+"""Étapes de configuration d'un volet à temps de trajet, ou d'un groupe de volets.
 
-Création : deux étapes.
-  1. choisir l'ouvrant réel à enrober (par exemple le volet Overkiz) ;
-  2. donner un nom, les temps d'ouverture et de fermeture, et l'échange des noms.
+Création : un menu (entité ou groupe), puis
+  - pour une entité, deux étapes : 1. choisir l'ouvrant réel à enrober (par exemple le volet
+    Overkiz) ; 2. donner un nom, les temps d'ouverture et de fermeture, et l'échange des noms ;
+  - pour un groupe, une étape : un nom et les volets (entités de cette intégration) à réunir.
 Options (bouton « Configurer » de l'entrée) : temps, ordre d'arrêt aux extrémités, classe d'appareil,
-masquage de l'ouvrant d'origine. Le nom et l'échange des noms ne se changent qu'à la création.
+masquage de l'ouvrant d'origine ; pour un groupe, la liste de ses volets. Le nom et l'échange des
+noms ne se changent qu'à la création.
 """
 
 from __future__ import annotations
@@ -38,10 +40,13 @@ from homeassistant.helpers.selector import (
     TextSelector,
 )
 
+from . import groupe
 from .const import (
     CONF_DEVICE_CLASS,
     CONF_DISABLE_OTHERS,
     CONF_HIDE_SOURCE,
+    CONF_KIND,
+    CONF_MEMBERS,
     CONF_NAME,
     CONF_PRESET_ICON,
     CONF_PRESET_NAME,
@@ -63,6 +68,7 @@ from .const import (
     DEFAULT_TRAVEL_TIME,
     DEVICE_CLASSES,
     DOMAIN,
+    KIND_GROUP,
     MAX_PRESETS,
     SECTION_POSITIONS,
 )
@@ -170,6 +176,45 @@ def _nom_propose(nom_source: str) -> str:
     return re.sub(r"\s*\[[^\]]*\]\s*$", "", nom_source).strip() or nom_source
 
 
+def _selecteur_volets(hass: Any) -> EntitySelector:
+    """Choix des volets d'un groupe : les entités de cette intégration, sauf les groupes.
+
+    Un groupe de groupes n'est pas prévu (un groupe commande des volets qui estiment chacun
+    leur position) : les entités des groupes sont donc retirées de la liste.
+    """
+    registre = er.async_get(hass)
+    groupes = [
+        i
+        for g in groupe.entrees_des_groupes(hass)
+        if (i := registre.async_get_entity_id("cover", DOMAIN, g.entry_id)) is not None
+    ]
+    return EntitySelector(
+        EntitySelectorConfig(
+            domain="cover", integration=DOMAIN, multiple=True, exclude_entities=groupes
+        )
+    )
+
+
+def _valider_volets(hass: Any, entites: list[str]) -> tuple[list[str], str | None]:
+    """Transforme les entités choisies en identifiants d'entrées ; renvoie (liste, clé d'erreur)."""
+    registre = er.async_get(hass)
+    entrees: list[str] = []
+    for identifiant in entites:
+        entree = registre.async_get(identifiant)
+        configuration = (
+            hass.config_entries.async_get_entry(entree.config_entry_id)
+            if entree is not None and entree.config_entry_id
+            else None
+        )
+        if configuration is None or configuration.domain != DOMAIN or groupe.est_groupe(configuration):
+            return [], "volet_invalide"
+        if configuration.entry_id not in entrees:
+            entrees.append(configuration.entry_id)
+    if len(entrees) < 2:
+        return [], "groupe_trop_petit"
+    return entrees, None
+
+
 class TimedCoverConfigFlow(ConfigFlow, domain=DOMAIN):
     """Création d'un volet à temps de trajet."""
 
@@ -182,7 +227,41 @@ class TimedCoverConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Première étape : choisir le volet réel."""
+        """Menu de départ : une entité personnalisée, ou un groupe de volets."""
+        return self.async_show_menu(step_id="user", menu_options=["entite", "groupe"])
+
+    async def async_step_groupe(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Création d'un groupe : un nom et les volets à réunir."""
+        erreurs: dict[str, str] = {}
+        if user_input is not None:
+            volets, erreur = _valider_volets(self.hass, user_input[CONF_MEMBERS])
+            if not slugify(user_input[CONF_NAME]):
+                erreurs[CONF_NAME] = "nom_invalide"
+            elif erreur:
+                erreurs[CONF_MEMBERS] = erreur
+            else:
+                nom = user_input[CONF_NAME].strip()
+                return self.async_create_entry(
+                    title=nom,
+                    data={CONF_KIND: KIND_GROUP, CONF_NAME: nom, CONF_MEMBERS: volets},
+                )
+        saisi = user_input or {}
+        schema = vol.Schema(
+            {
+                vol.Required(CONF_NAME, **({"default": saisi[CONF_NAME]} if CONF_NAME in saisi else {})): TextSelector(),
+                vol.Required(
+                    CONF_MEMBERS, **({"default": saisi[CONF_MEMBERS]} if CONF_MEMBERS in saisi else {})
+                ): _selecteur_volets(self.hass),
+            }
+        )
+        return self.async_show_form(step_id="groupe", data_schema=schema, errors=erreurs)
+
+    async def async_step_entite(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Première étape d'une entité : choisir le volet réel."""
         erreurs: dict[str, str] = {}
         if user_input is not None:
             source = user_input[CONF_SOURCE_ENTITY]
@@ -206,7 +285,7 @@ class TimedCoverConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
             }
         )
-        return self.async_show_form(step_id="user", data_schema=schema, errors=erreurs)
+        return self.async_show_form(step_id="entite", data_schema=schema, errors=erreurs)
 
     async def async_step_parametres(
         self, user_input: dict[str, Any] | None = None
@@ -288,10 +367,33 @@ class TimedCoverConfigFlow(ConfigFlow, domain=DOMAIN):
 class TimedCoverOptionsFlow(OptionsFlow):
     """Modification des réglages d'un volet à temps de trajet."""
 
+    async def async_step_groupe(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Options d'un groupe : la liste de ses volets (le nom ne se change qu'à la création)."""
+        erreurs: dict[str, str] = {}
+        if user_input is not None:
+            volets, erreur = _valider_volets(self.hass, user_input[CONF_MEMBERS])
+            if erreur:
+                erreurs[CONF_MEMBERS] = erreur
+            else:
+                return self.async_create_entry(data={CONF_MEMBERS: volets})
+        actuels = (
+            user_input[CONF_MEMBERS]
+            if user_input is not None
+            else groupe.ids_membres(self.hass, self.config_entry)
+        )
+        schema = vol.Schema(
+            {vol.Required(CONF_MEMBERS, default=actuels): _selecteur_volets(self.hass)}
+        )
+        return self.async_show_form(step_id="groupe", data_schema=schema, errors=erreurs)
+
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Formulaire unique d'options."""
+        if groupe.est_groupe(self.config_entry):
+            return await self.async_step_groupe()
         erreurs: dict[str, str] = {}
         if user_input is not None:
             positions, erreur_positions = _valider_positions(_positions_du_bloc(user_input))

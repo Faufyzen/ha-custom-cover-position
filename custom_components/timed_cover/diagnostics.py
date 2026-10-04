@@ -20,6 +20,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.loader import async_get_integration
 
+from . import groupe
 from .const import DOMAIN
 from .source import id_source
 
@@ -64,6 +65,30 @@ async def async_get_config_entry_diagnostics(
     """Diagnostic de l'ouvrant correspondant à cette entrée de configuration."""
     registre = er.async_get(hass)
     integration = await async_get_integration(hass, DOMAIN)
+    if groupe.est_groupe(entry):
+        identifiant_groupe = registre.async_get_entity_id("cover", DOMAIN, entry.entry_id)
+        return {
+            "versions": {"integration": str(integration.version), "home_assistant": VERSION_HA},
+            "config_entry": {
+                "title": entry.title,
+                "format_version": entry.version,
+                "data": dict(entry.data),
+                "options": dict(entry.options),
+            },
+            "cover": {
+                "state": _etat(hass, identifiant_groupe),
+                "registry": _registre(registre.async_get(identifiant_groupe)),
+            },
+            "members": [
+                {"state": _etat(hass, i), "registry": _registre(registre.async_get(i))}
+                for i in groupe.ids_membres(hass, entry)
+            ],
+            "preset_buttons": [
+                {"state": _etat(hass, e.entity_id), "registry": _registre(e)}
+                for e in er.async_entries_for_config_entry(registre, entry.entry_id)
+                if e.domain == "button"
+            ],
+        }
     identifiant_source = id_source(hass, entry)
     identifiant_ouvrant = registre.async_get_entity_id("cover", DOMAIN, entry.entry_id)
     source = registre.async_get(identifiant_source)
